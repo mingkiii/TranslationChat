@@ -76,7 +76,7 @@
 ---
 
 ## 🔍 ERD
-![](translation_chat.png)
+![](docs/translation_chat.png)
 
 ---
 ## 🐥 papago
@@ -110,4 +110,4 @@
 ---
 
 ## 💥 Trouble Shooting
-프로젝트를 진행하면서 발생한 문제점들과 해결법 서술합니다.
+[go to the trouble shooting section](docs/TROUBLE_SHOOTING.md)
