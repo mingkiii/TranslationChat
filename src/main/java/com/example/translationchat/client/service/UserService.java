@@ -26,15 +26,13 @@ public class UserService {
     public String signUp(SignUpForm form) {
         String email = form.getEmail();
         String name = form.getName();
-        // 이메일 중복 체크 (비관적 락)
-        User existingUserEmail = userRepository.findByEmail(email);
-        if (existingUserEmail != null) {
+        // 이메일 중복 체크
+        if (userRepository.existsByEmail(email)) {
             throw new CustomException(ALREADY_REGISTER_USER);
         }
 
-        // 이름 중복 체크 (비관적 락)
-        User existingUserName = userRepository.findByName(name);
-        if (existingUserName != null) {
+        // 이름 중복 체크
+        if (userRepository.existsByName(name)) {
             throw new CustomException(ALREADY_EXIST_NAME);
         }
 

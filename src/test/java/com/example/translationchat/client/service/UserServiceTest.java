@@ -4,6 +4,7 @@ import static com.example.translationchat.common.exception.ErrorCode.ALREADY_EXI
 import static com.example.translationchat.common.exception.ErrorCode.ALREADY_REGISTER_USER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.example.translationchat.client.domain.form.SignUpForm;
 import com.example.translationchat.client.domain.model.Language;
@@ -11,11 +12,20 @@ import com.example.translationchat.client.domain.model.Nationality;
 import com.example.translationchat.client.domain.model.User;
 import com.example.translationchat.client.domain.repository.UserRepository;
 import com.example.translationchat.common.exception.CustomException;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import javax.persistence.OptimisticLockException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,6 +66,94 @@ class UserServiceTest {
         // then
         assertEquals("회원가입이 완료되었습니다.", result);
     }
+    @Test
+    @DisplayName("회원가입 동시성 테스트")
+    public void testOptimisticLockInSignUp()
+        throws InterruptedException {
+        // given
+        String name = "test";
+        // 사용자 정보 생성 - 여러 사람이 동시에 동일한 이메일로 시도하는 경우는 현실적으로 드물다고 생각하여 이름을 동일하게 맞춤.
+        SignUpForm form1 = SignUpForm.builder()
+            .email("test@example.com")
+            .name(name)
+            .password("test123!")
+            .nationality("KOREA")
+            .language("KO")
+            .build();
+        SignUpForm form2 = SignUpForm.builder()
+            .email("test2@example.com")
+            .name(name)
+            .password("test123!")
+            .nationality("KOREA")
+            .language("KO")
+            .build();
+
+        // when
+        // 회원가입을 두 개의 스레드에서 동시에 시도합니다.
+        CountDownLatch latch = new CountDownLatch(2);
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+        Future<String> future1 = executorService.submit(() -> {
+            latch.countDown();
+            try {
+                latch.await(); // 모든 스레드가 시작될 때까지 대기
+                return userService.signUp(form1);
+            } catch (Exception e) {
+                return handleException(e);
+            }
+        });
+
+        Future<String> future2 = executorService.submit(() -> {
+            latch.countDown();
+            try {
+                latch.await(); // 모든 스레드가 시작될 때까지 대기
+                return userService.signUp(form2);
+            } catch (Exception e) {
+                return handleException(e);
+            }
+        });
+
+        // 스레드 실행이 완료될 때까지 대기합니다.
+        executorService.shutdown();
+        executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+
+        // then
+        // 회원가입은 한 번만 성공해야 합니다.
+        List<User> users = userRepository.findAll();
+        assertEquals(1, users.size());
+
+        // 두 개의 스레드 중 하나만 성공해야 합니다.
+        boolean success1 = isSuccessful(future1);
+        boolean success2 = isSuccessful(future2);
+
+        if (success1 && !success2) {
+            assertEquals("test@example.com", users.get(0).getEmail());
+        } else if (!success1 && success2) {
+            assertEquals("test2@example.com", users.get(0).getEmail());
+        } else {
+            fail("두 개의 스레드 중 하나만 성공해야 합니다.");
+        }
+    }
+    private String handleException(Exception e) {
+        if (e instanceof ExecutionException) {
+            Throwable cause = e.getCause();
+            if (cause instanceof OptimisticLockException) {
+                return "낙관적 락으로 인해 회원가입이 실패했습니다.";
+            } else if (cause instanceof DataIntegrityViolationException) {
+                return "중복된 이름으로 인해 회원가입이 실패했습니다."; // unique 컬럼 설정을 위반하여 발생
+            }
+        }
+        throw new AssertionError("예상치 못한 예외가 발생했습니다.", e);
+    }
+
+    private boolean isSuccessful(Future<String> future) {
+        try {
+            return future.isDone() && future.get().equals("회원가입이 완료되었습니다.");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     @Test
     @DisplayName("회원가입_실패-이메일 중복")
     public void testSignUp_DuplicateEmail() {
