@@ -12,20 +12,18 @@ import com.example.translationchat.client.domain.model.Nationality;
 import com.example.translationchat.client.domain.model.User;
 import com.example.translationchat.client.domain.repository.UserRepository;
 import com.example.translationchat.common.exception.CustomException;
+import com.example.translationchat.common.redis.RedisLockUtil;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import javax.persistence.OptimisticLockException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,11 +39,14 @@ class UserServiceTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private RedisLockUtil redisLockUtil;
+
     private UserService userService;
 
     @BeforeEach
     public void setUp() {
-        userService = new UserService(userRepository, passwordEncoder);
+        userService = new UserService(userRepository, passwordEncoder, redisLockUtil);
     }
 
     @Test
@@ -99,7 +100,7 @@ class UserServiceTest {
                 latch.await(); // 모든 스레드가 시작될 때까지 대기
                 return userService.signUp(form1);
             } catch (Exception e) {
-                return handleException(e);
+                return e.getMessage();
             }
         });
 
@@ -109,7 +110,7 @@ class UserServiceTest {
                 latch.await(); // 모든 스레드가 시작될 때까지 대기
                 return userService.signUp(form2);
             } catch (Exception e) {
-                return handleException(e);
+                return e.getMessage();
             }
         });
 
@@ -134,18 +135,6 @@ class UserServiceTest {
             fail("두 개의 스레드 중 하나만 성공해야 합니다.");
         }
     }
-    private String handleException(Exception e) {
-        if (e instanceof ExecutionException) {
-            Throwable cause = e.getCause();
-            if (cause instanceof OptimisticLockException) {
-                return "낙관적 락으로 인해 회원가입이 실패했습니다.";
-            } else if (cause instanceof DataIntegrityViolationException) {
-                return "중복된 이름으로 인해 회원가입이 실패했습니다."; // unique 컬럼 설정을 위반하여 발생
-            }
-        }
-        throw new AssertionError("예상치 못한 예외가 발생했습니다.", e);
-    }
-
     private boolean isSuccessful(Future<String> future) {
         try {
             return future.isDone() && future.get().equals("회원가입이 완료되었습니다.");

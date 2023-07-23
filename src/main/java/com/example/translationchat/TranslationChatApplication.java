@@ -8,7 +8,9 @@ import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+@EnableTransactionManagement
 @EnableJpaRepositories(basePackages = "com.example.translationchat.client.domain.repository")
 @EnableJpaAuditing
 @EntityScan("com.example.translationchat.client.domain.model")
