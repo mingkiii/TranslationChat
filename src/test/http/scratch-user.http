@@ -1,0 +1,12 @@
+######## User
+### 회원 가입
+POST http://localhost:8080/user/signup
+Content-Type: application/json
+
+{
+  "email": "test@test.com",
+  "name": "test",
+  "password": "test123!",
+  "nationality": "KOREA",
+  "language": "KO"
+}
