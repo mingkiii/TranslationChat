@@ -1,6 +1,5 @@
 package com.example.translationchat.client.domain.form;
 
-import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
@@ -15,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class SignUpForm {
     @NotBlank(message = "필수 입력")
-    @Email(message = "이메일 형식에 맞게 입력해 주세요.")
+    @Pattern(regexp = "^.+@.+\\..+$", message = "이메일 형식에 맞게 입력해 주세요.")
     private String email;
 
     @Pattern(regexp = "^[^\\s]+$", message = "이름에는 공백이 들어갈 수 없습니다.")

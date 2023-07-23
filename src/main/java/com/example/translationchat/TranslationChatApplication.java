@@ -14,7 +14,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 @EntityScan("com.example.translationchat.client.domain.model")
 @ServletComponentScan
 @EnableWebSecurity
-//@EnableSwagger2
 @RequiredArgsConstructor
 @SpringBootApplication
 public class TranslationChatApplication {
