@@ -31,12 +31,16 @@ dependencies {
     implementation 'org.hibernate:hibernate-core:5.5.5.Final'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
+    implementation 'com.auth0:java-jwt:4.2.0'
+
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'com.h2database:h2'
     runtimeOnly 'com.mysql:mysql-connector-j:8.0.33'
     annotationProcessor 'org.projectlombok:lombok'
+
+    testImplementation 'org.hamcrest:hamcrest:2.2'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
 }

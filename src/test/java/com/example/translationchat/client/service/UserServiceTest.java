@@ -13,6 +13,7 @@ import com.example.translationchat.client.domain.model.User;
 import com.example.translationchat.client.domain.repository.UserRepository;
 import com.example.translationchat.common.exception.CustomException;
 import com.example.translationchat.common.redis.RedisLockUtil;
+import com.example.translationchat.common.security.JwtAuthenticationProvider;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,13 +44,20 @@ class UserServiceTest {
     @Autowired
     private RedisLockUtil redisLockUtil;
 
+    @Autowired
+    private JwtAuthenticationProvider provider;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
     private UserService userService;
 
     @BeforeEach
     public void setUp() {
-        userService = new UserService(userRepository, passwordEncoder, redisLockUtil);
+        userService = new UserService(userRepository, passwordEncoder, redisLockUtil, provider, authenticationManager);
     }
 
+    // 회원가입 테스트
     @Test
     @DisplayName("회원가입_성공")
     public void testSignUp_Success() {
@@ -58,7 +67,7 @@ class UserServiceTest {
             .password("test123!")
             .name("test")
             .nationality("KOREA")
-            .language("KO")
+            .language("french")
             .build();
 
         // when
@@ -79,14 +88,14 @@ class UserServiceTest {
             .name(name)
             .password("test123!")
             .nationality("KOREA")
-            .language("KO")
+            .language("korean")
             .build();
         SignUpForm form2 = SignUpForm.builder()
             .email("test2@example.com")
             .name(name)
             .password("test123!")
-            .nationality("KOREA")
-            .language("KO")
+            .nationality("USA")
+            .language("english")
             .build();
 
         // when
