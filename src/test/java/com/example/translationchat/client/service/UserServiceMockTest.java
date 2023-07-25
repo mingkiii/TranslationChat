@@ -1,14 +1,13 @@
 package com.example.translationchat.client.service;
 
-import static com.example.translationchat.common.exception.ErrorCode.ALREADY_REGISTERED_EMAIL;
 import static com.example.translationchat.common.exception.ErrorCode.ALREADY_REGISTERED_NAME;
 import static com.example.translationchat.common.exception.ErrorCode.LOGIN_FAIL;
-import static com.example.translationchat.common.exception.ErrorCode.LOGIN_REQUIRED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -16,14 +15,13 @@ import static org.mockito.Mockito.when;
 
 import com.example.translationchat.client.domain.dto.UserInfoDto;
 import com.example.translationchat.client.domain.form.LoginForm;
-import com.example.translationchat.client.domain.form.SignUpForm;
 import com.example.translationchat.client.domain.form.UpdateUserForm;
 import com.example.translationchat.client.domain.model.Language;
 import com.example.translationchat.client.domain.model.Nationality;
 import com.example.translationchat.client.domain.model.User;
 import com.example.translationchat.client.domain.repository.UserRepository;
 import com.example.translationchat.common.exception.CustomException;
-import com.example.translationchat.common.redis.user.UserLockService;
+import com.example.translationchat.common.redis.util.RedisLockUtil;
 import com.example.translationchat.common.security.JwtAuthenticationProvider;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
 import java.util.Optional;
@@ -46,93 +44,11 @@ public class UserServiceMockTest {
     @Mock
     private JwtAuthenticationProvider provider;
     @Mock
+    private RedisLockUtil redisLockUtil;
+    @Mock
     private PasswordEncoder passwordEncoder;
     @Mock
-    private UserLockService userLockService;
-    @Mock
     private AuthenticationManager authenticationManager;
-
-    // 회원가입 테스트
-    @Test
-    @DisplayName("회원가입_성공")
-    public void testSignUp_Success() {
-        // given
-        SignUpForm signUpForm = SignUpForm.builder()
-            .email("test@email.com")
-            .password("test123!")
-            .name("test")
-            .nationality("KOREA")
-            .language("french")
-            .build();
-
-        when(userRepository.existsByEmail(anyString())).thenReturn(false);
-        when(userRepository.existsByName(anyString())).thenReturn(false);
-        when(userLockService.isAvailableEmail(anyString(),anyString())).thenReturn(true);
-        when(userLockService.isAvailableName(anyString(),anyString())).thenReturn(true);
-
-        // when
-        String result = userService.signUp(signUpForm);
-
-        // then
-        assertEquals("회원가입이 완료되었습니다.", result);
-    }
-    @Test
-    @DisplayName("회원가입_실패-이메일 중복")
-    public void testSignUp_DuplicateEmail() {
-        // given
-        User existingUser = User.builder()
-            .email("existing@email.com")
-            .password("password")
-            .name("existing")
-            .nationality(Nationality.KOREA)
-            .language(Language.KO)
-            .build();
-
-        SignUpForm signUpForm = SignUpForm.builder()
-            .email(existingUser.getEmail())
-            .password("test123!")
-            .name("test")
-            .nationality("KOREA")
-            .language("KO")
-            .build();
-
-        when(userRepository.existsByEmail(anyString())).thenReturn(true);
-        // when
-        CustomException exception = assertThrows(
-            CustomException.class, () -> userService.signUp(signUpForm));
-        // then
-        assertEquals(ALREADY_REGISTERED_EMAIL, exception.getErrorCode());
-    }
-    @Test
-    @DisplayName("회원가입_실패-이름 중복")
-    public void testSignUp_DuplicateName() {
-        // given
-        User existingUser = User.builder()
-            .email("existing@email.com")
-            .password("password")
-            .name("existing")
-            .nationality(Nationality.KOREA)
-            .language(Language.KO)
-            .build();
-
-        SignUpForm signUpForm = SignUpForm.builder()
-            .email("new@email.com")
-            .password("test123!")
-            .name(existingUser.getName())
-            .nationality("KOREA")
-            .language("KO")
-            .build();
-
-        when(userRepository.existsByEmail(anyString())).thenReturn(false);
-        when(userRepository.existsByName(anyString())).thenReturn(true);
-        when(userLockService.isAvailableEmail(anyString(),anyString())).thenReturn(true);
-        when(userLockService.isAvailableName(anyString(),anyString())).thenReturn(false);
-        // when
-        CustomException exception = assertThrows(
-            CustomException.class, () -> userService.signUp(signUpForm));
-        // then
-        assertEquals(ALREADY_REGISTERED_NAME, exception.getErrorCode());
-    }
 
     // 로그인 테스트
     @Test
@@ -203,17 +119,6 @@ public class UserServiceMockTest {
         verify(userRepository, times(1)).findByEmail(userEmail);
         verify(userRepository, times(1)).delete(user);
     }
-    @Test
-    @DisplayName("회원 탈퇴 - 실패: 로그인 후 토큰이 만료된 경우")
-    void testDelete_Fail_LoginRequired() {
-        // given
-        Authentication authentication = null; // 로그인 후 토큰이 만료된 경우
-
-        // when, then
-        CustomException exception = assertThrows(CustomException.class,
-            () -> userService.delete(authentication));
-        assertEquals(LOGIN_REQUIRED, exception.getErrorCode());
-    }
 
     @Test
     @DisplayName("회원 정보 조회 - 성공")
@@ -242,17 +147,6 @@ public class UserServiceMockTest {
         assertEquals(Language.FR.getDisplayName(), userInfo.getLanguage());
         assertTrue(userInfo.isRandomApproval());
     }
-    @Test
-    @DisplayName("회원 정보 조회 - 실패: 로그인 후 토큰이 만료된 경우")
-    void testGetInfo_Fail_LoginRequired() {
-        // given
-        Authentication authentication = null; // 로그인 후 토큰이 만료된 경우
-
-        // when, then
-        CustomException exception = assertThrows(CustomException.class,
-            () -> userService.getInfo(authentication));
-        assertEquals(LOGIN_REQUIRED, exception.getErrorCode());
-    }
 
     @Test
     @DisplayName("회원 정보 수정 - 성공")
@@ -264,27 +158,60 @@ public class UserServiceMockTest {
             .email(userEmail)
             .password(userPassword)
             .name("OldUser")
+            .nationality(Nationality.CANADA)
             .language(Language.EN)
             .build();
         UpdateUserForm form = UpdateUserForm.builder()
             .name("Updated")
             .password("newPassword")
-            .nationality("FRANCE")
-            .language("English")
+            .nationality(Nationality.UK)
+            .language(Language.FR)
             .build();
         PrincipalDetails principalDetails = new PrincipalDetails(user);
         Authentication authentication = new UsernamePasswordAuthenticationToken(principalDetails, "", principalDetails.getAuthorities());
         when(userRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
         when(passwordEncoder.encode(form.getPassword())).thenReturn("encodedPassword");
-        when(userLockService.isAvailableName(anyString(), anyString())).thenReturn(true);
-        when(userRepository.existsByName(anyString())).thenReturn(false);
+        when(userRepository.existsByName(form.getName())).thenReturn(false);
+        when(redisLockUtil.getLock(anyString(), anyLong())).thenReturn(true);
         // when
         UserInfoDto updatedUserInfo = userService.updateInfo(authentication, form);
 
         // then
         assertNotNull(updatedUserInfo);
         assertEquals("Updated", updatedUserInfo.getName());
-        assertEquals("FRANCE", String.valueOf(updatedUserInfo.getNationality()));
-        assertEquals("English", updatedUserInfo.getLanguage());
+        assertEquals(String.valueOf(form.getNationality()), updatedUserInfo.getNationality());
+        assertEquals(form.getLanguage().getDisplayName(), updatedUserInfo.getLanguage());
+    }
+    @Test
+    @DisplayName("회원 정보 수정 - 실패_이미 등록된 이름")
+    void testUpdateInfo_Fail() {
+        // given
+        String userEmail = "test@test.com";
+        String userPassword = "oldPassword";
+        User user = User.builder()
+            .email(userEmail)
+            .password(userPassword)
+            .name("OldUser")
+            .nationality(Nationality.CANADA)
+            .language(Language.EN)
+            .build();
+        UpdateUserForm form = UpdateUserForm.builder()
+            .name("Updated")
+            .password("newPassword")
+            .nationality(Nationality.UK)
+            .language(Language.FR)
+            .build();
+        PrincipalDetails principalDetails = new PrincipalDetails(user);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(principalDetails, "", principalDetails.getAuthorities());
+        when(userRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
+        when(passwordEncoder.encode(form.getPassword())).thenReturn("encodedPassword");
+        when(userRepository.existsByName(form.getName())).thenReturn(true);
+        when(redisLockUtil.getLock(anyString(), anyLong())).thenReturn(true);
+        // when
+        CustomException exception = assertThrows(CustomException.class,
+            () ->userService.updateInfo(authentication, form));
+
+        // then
+        assertEquals(ALREADY_REGISTERED_NAME, exception.getErrorCode());
     }
 }

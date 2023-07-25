@@ -50,8 +50,8 @@ class UserControllerTest {
             .email("test@test.com")
             .name("test")
             .password("test123!")
-            .nationality("KOREA")
-            .language("korean")
+            .nationality(Nationality.UK)
+            .language(Language.FR)
             .build();
 
         String expectedResult = "회원가입이 완료되었습니다.";
@@ -126,15 +126,15 @@ class UserControllerTest {
         UpdateUserForm form = UpdateUserForm.builder()
             .name("new_test")
             .password("new1234!")
-            .nationality("USA")
-            .language("English")
+            .nationality(Nationality.UK)
+            .language(Language.FR)
             .build();
 
         UserInfoDto updatedUserInfo = UserInfoDto.builder()
             .email("test@test.com")
             .name("new_test")
-            .nationality("USA")
-            .language("English")
+            .nationality(String.valueOf(Nationality.UK))
+            .language(Language.FR.getDisplayName())
             .build();
 
         when(userService.updateInfo(any(Authentication.class), any(
@@ -146,7 +146,7 @@ class UserControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.email", is("test@test.com")))
             .andExpect(jsonPath("$.name", is("new_test")))
-            .andExpect(jsonPath("$.nationality", is("USA")))
-            .andExpect(jsonPath("$.language", is("English")));
+            .andExpect(jsonPath("$.nationality", is("UK")))
+            .andExpect(jsonPath("$.language", is("French")));
     }
 }

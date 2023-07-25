@@ -16,6 +16,7 @@ public enum ErrorCode {
     NOT_FOUND_USER(HttpStatus.BAD_REQUEST, "회원을 찾을 수 없습니다."),
     LOGIN_REQUIRED(HttpStatus.BAD_REQUEST, "인증이 유효하지 않습니다. 다시 로그인 후 이용해주세요."),
 
+    LOCK_FAILED(HttpStatus.BAD_REQUEST, "이메일 또는 이름이 이미 사용중입니다."),
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "올바른 입력값이 아닙니다.");
 
     private final HttpStatus httpStatus;

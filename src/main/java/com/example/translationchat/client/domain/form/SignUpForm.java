@@ -1,6 +1,9 @@
 package com.example.translationchat.client.domain.form;
 
+import com.example.translationchat.client.domain.model.Language;
+import com.example.translationchat.client.domain.model.Nationality;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -27,9 +30,9 @@ public class SignUpForm {
         message = "비밀번호는 8~16자 영문 대 소문자, 숫자, 특수문자를 사용하세요. 특수문자는 반드시 포함 해주세요.")
     private String password;
 
-    @NotBlank(message = "필수 입력")
-    private String nationality;
+    @NotNull(message = "필수 입력")
+    private Nationality nationality;
 
-    @NotBlank(message = "필수 입력")
-    private String language;
+    @NotNull(message = "필수 입력")
+    private Language language;
 }
