@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/translation_chat
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: 1212
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate.dialect: org.hibernate.dialect.MySQL5InnoDBDialect
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+
+
+
+jwt:
+  secret:

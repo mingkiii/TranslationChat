@@ -8,8 +8,8 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum ErrorCode {
     // signUp
-    ALREADY_REGISTER_USER(HttpStatus.BAD_REQUEST, "이미 가입된 회원 입니다."),
-    ALREADY_EXIST_NAME(HttpStatus.BAD_REQUEST, "이미 사용중인 이름입니다."),
+    ALREADY_REGISTERED_EMAIL(HttpStatus.BAD_REQUEST, "이미 가입된 회원 입니다."),
+    ALREADY_REGISTERED_NAME(HttpStatus.BAD_REQUEST, "이미 사용중인 이름입니다."),
     // login
     LOGIN_FAIL(HttpStatus.BAD_REQUEST, "로그인에 실패하였습니다."),
 
