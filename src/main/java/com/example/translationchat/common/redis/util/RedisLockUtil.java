@@ -1,4 +1,4 @@
-package com.example.translationchat.common.redis;
+package com.example.translationchat.common.redis.util;
 
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;

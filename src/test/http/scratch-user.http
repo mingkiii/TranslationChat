@@ -10,3 +10,12 @@ Content-Type: application/json
   "nationality": "KOREA",
   "language": "KO"
 }
+
+### 로그인
+POST http://localhost:8080/user/login
+Content-Type: application/json
+
+{
+  "email": "test@test.com",
+  "password": "test123!"
+}
