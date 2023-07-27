@@ -10,10 +10,11 @@ import com.example.translationchat.client.domain.dto.UserInfoDto;
 import com.example.translationchat.client.domain.form.LoginForm;
 import com.example.translationchat.client.domain.form.SignUpForm;
 import com.example.translationchat.client.domain.form.UpdateUserForm;
-import com.example.translationchat.client.domain.type.Language;
-import com.example.translationchat.client.domain.type.Nationality;
 import com.example.translationchat.client.domain.model.User;
 import com.example.translationchat.client.domain.repository.UserRepository;
+import com.example.translationchat.client.domain.type.ActiveStatus;
+import com.example.translationchat.client.domain.type.Language;
+import com.example.translationchat.client.domain.type.Nationality;
 import com.example.translationchat.common.exception.CustomException;
 import com.example.translationchat.common.redis.util.RedisLockUtil;
 import com.example.translationchat.common.security.JwtAuthenticationProvider;
@@ -97,6 +98,8 @@ public class UserService {
 
             Long authenticatedId = principalDetails.getUser().getId();
             String authenticatedEmail = principalDetails.getUser().getEmail();
+            // 로그인 시 활성 상태가 된다.
+            principalDetails.getUser().setStatus(ActiveStatus.ACTIVE);
 
             return provider.createToken(authenticatedId, authenticatedEmail);
         } else {
@@ -145,24 +148,29 @@ public class UserService {
             } finally {
                 redisLockUtil.unLock(newName);
             }
-
         }
+
         // 비밀번호 변경
         String newPassword = form.getPassword();
         if (!newPassword.isEmpty() && !passwordEncoder.matches(newPassword,
             user.getPassword())) {
             user.setPassword(passwordEncoder.encode(newPassword));
         }
+
         // 국적 변경
         Nationality newNationality = form.getNationality();
         if (!newNationality.equals(user.getNationality())) {
             user.setNationality(newNationality);
         }
+
         // 언어 변경
         Language newLanguage = form.getLanguage();
         if (!newLanguage.equals(user.getLanguage())) {
             user.setLanguage(newLanguage);
         }
+
+        // 활성 상태 변경
+        user.setStatus(form.getStatus());
 
         userRepository.save(user);
 

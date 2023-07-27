@@ -1,5 +1,6 @@
 package com.example.translationchat.client.domain.model;
 
+import com.example.translationchat.client.domain.type.ActiveStatus;
 import com.example.translationchat.client.domain.type.Language;
 import com.example.translationchat.client.domain.type.Nationality;
 import com.example.translationchat.common.model.BaseEntity;
@@ -50,6 +51,10 @@ public class User extends BaseEntity{
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Language language;
+
+    @Column
+    @Enumerated(EnumType.STRING)
+    private ActiveStatus status;
 
     @Column
     private boolean randomApproval;
