@@ -1,4 +1,4 @@
-package com.example.translationchat.client.domain.model;
+package com.example.translationchat.common.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDateTime;

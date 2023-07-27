@@ -13,11 +13,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.example.translationchat.client.domain.form.UpdateUserForm;
 import com.example.translationchat.client.domain.dto.UserInfoDto;
 import com.example.translationchat.client.domain.form.LoginForm;
-import com.example.translationchat.client.domain.form.UpdateUserForm;
-import com.example.translationchat.client.domain.model.Language;
-import com.example.translationchat.client.domain.model.Nationality;
+import com.example.translationchat.client.domain.type.Language;
+import com.example.translationchat.client.domain.type.Nationality;
 import com.example.translationchat.client.domain.model.User;
 import com.example.translationchat.client.domain.repository.UserRepository;
 import com.example.translationchat.common.exception.CustomException;
@@ -143,7 +143,7 @@ public class UserServiceMockTest {
         assertNotNull(userInfo);
         assertEquals(userEmail, userInfo.getEmail());
         assertEquals("Test User", userInfo.getName());
-        assertEquals(String.valueOf(Nationality.UK), userInfo.getNationality());
+        assertEquals(Nationality.UK, userInfo.getNationality());
         assertEquals(Language.FR.getDisplayName(), userInfo.getLanguage());
         assertTrue(userInfo.isRandomApproval());
     }
@@ -179,7 +179,7 @@ public class UserServiceMockTest {
         // then
         assertNotNull(updatedUserInfo);
         assertEquals("Updated", updatedUserInfo.getName());
-        assertEquals(String.valueOf(form.getNationality()), updatedUserInfo.getNationality());
+        assertEquals(form.getNationality(), updatedUserInfo.getNationality());
         assertEquals(form.getLanguage().getDisplayName(), updatedUserInfo.getLanguage());
     }
     @Test

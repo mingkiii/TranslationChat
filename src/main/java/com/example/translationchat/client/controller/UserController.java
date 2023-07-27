@@ -1,10 +1,10 @@
 package com.example.translationchat.client.controller;
 
+import com.example.translationchat.client.domain.form.UpdateUserForm;
+import com.example.translationchat.client.service.UserService;
 import com.example.translationchat.client.domain.dto.UserInfoDto;
 import com.example.translationchat.client.domain.form.LoginForm;
 import com.example.translationchat.client.domain.form.SignUpForm;
-import com.example.translationchat.client.domain.form.UpdateUserForm;
-import com.example.translationchat.client.service.UserService;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

@@ -6,11 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import com.example.translationchat.client.domain.form.SignUpForm;
-import com.example.translationchat.client.domain.model.Language;
-import com.example.translationchat.client.domain.model.Nationality;
 import com.example.translationchat.client.domain.model.User;
 import com.example.translationchat.client.domain.repository.UserRepository;
+import com.example.translationchat.client.domain.form.SignUpForm;
+import com.example.translationchat.client.domain.type.Language;
+import com.example.translationchat.client.domain.type.Nationality;
 import com.example.translationchat.common.exception.CustomException;
 import com.example.translationchat.common.redis.util.RedisLockUtil;
 import com.example.translationchat.common.security.JwtAuthenticationProvider;

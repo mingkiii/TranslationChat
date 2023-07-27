@@ -14,13 +14,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.example.translationchat.client.domain.dto.UserInfoDto;
-import com.example.translationchat.client.domain.form.LoginForm;
-import com.example.translationchat.client.domain.form.SignUpForm;
 import com.example.translationchat.client.domain.form.UpdateUserForm;
-import com.example.translationchat.client.domain.model.Language;
-import com.example.translationchat.client.domain.model.Nationality;
+import com.example.translationchat.client.domain.type.Language;
+import com.example.translationchat.client.domain.type.Nationality;
 import com.example.translationchat.client.domain.model.User;
 import com.example.translationchat.client.service.UserService;
+import com.example.translationchat.client.domain.form.LoginForm;
+import com.example.translationchat.client.domain.form.SignUpForm;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -133,7 +133,7 @@ class UserControllerTest {
         UserInfoDto updatedUserInfo = UserInfoDto.builder()
             .email("test@test.com")
             .name("new_test")
-            .nationality(String.valueOf(Nationality.UK))
+            .nationality(Nationality.UK)
             .language(Language.FR.getDisplayName())
             .build();
 

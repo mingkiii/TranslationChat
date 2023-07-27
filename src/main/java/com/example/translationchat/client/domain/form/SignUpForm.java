@@ -1,7 +1,7 @@
 package com.example.translationchat.client.domain.form;
 
-import com.example.translationchat.client.domain.model.Language;
-import com.example.translationchat.client.domain.model.Nationality;
+import com.example.translationchat.client.domain.type.Language;
+import com.example.translationchat.client.domain.type.Nationality;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
