@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
@@ -13,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
+@EnableWebSecurity
 @RequiredArgsConstructor
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
@@ -37,12 +39,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
             .authorizeRequests()
-            .antMatchers("/user/signup", "/user/login").permitAll()
+            .antMatchers("/ws/user/signup", "/ws/user/login").permitAll()
             // 회원 가입 및 로그인은 모든 사용자 접근 가능
-            .anyRequest().authenticated()
+            .antMatchers("/ws/**").authenticated()
             // 인증된 사용자만 접근 가능
             .and()
-            .addFilterBefore(new JwtAuthenticationFilter(authenticationManager(), provider),
+            .addFilterBefore(new JwtAuthorizationFilter(provider),
                 UsernamePasswordAuthenticationFilter.class);
     }
 }

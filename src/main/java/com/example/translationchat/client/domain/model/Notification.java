@@ -1,8 +1,7 @@
 package com.example.translationchat.client.domain.model;
 
-import com.example.translationchat.client.domain.type.FriendshipStatus;
+import com.example.translationchat.client.domain.type.ContentType;
 import com.example.translationchat.common.model.BaseEntity;
-import java.time.LocalDateTime;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -26,7 +25,7 @@ import org.hibernate.envers.AuditOverride;
 @NoArgsConstructor
 @AllArgsConstructor
 @AuditOverride(forClass = BaseEntity.class)
-public class Friendship extends BaseEntity{
+public class Notification extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -35,17 +34,10 @@ public class Friendship extends BaseEntity{
     @JoinColumn(name = "user_id")
     private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "friend_id")
-    private User friend;
+    @Column
+    private String args;
 
     @Column
     @Enumerated(EnumType.STRING)
-    private FriendshipStatus friendshipStatus;
-
-    @Column
-    private LocalDateTime requestTime;
-
-    @Column
-    private LocalDateTime acceptTime;
+    private ContentType content;
 }

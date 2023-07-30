@@ -1,10 +1,13 @@
 package com.example.translationchat.client.controller;
 
-import com.example.translationchat.client.domain.form.UpdateUserForm;
-import com.example.translationchat.client.service.UserService;
+import com.example.translationchat.client.domain.dto.FriendInfoDto;
 import com.example.translationchat.client.domain.dto.UserInfoDto;
 import com.example.translationchat.client.domain.form.LoginForm;
 import com.example.translationchat.client.domain.form.SignUpForm;
+import com.example.translationchat.client.domain.form.UpdateUserForm;
+import com.example.translationchat.client.service.UserService;
+import java.io.IOException;
+import java.util.List;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,10 +18,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/ws/user")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -32,7 +36,7 @@ public class UserController {
 
     // 로그인
     @PostMapping("/login")
-    public ResponseEntity<String> login(@Valid @RequestBody LoginForm form) {
+    public ResponseEntity<String> login(@Valid @RequestBody LoginForm form) throws IOException {
         return ResponseEntity.ok(userService.login(form));
     }
 
@@ -56,4 +60,8 @@ public class UserController {
         return ResponseEntity.ok(userService.updateInfo(authentication, form));
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<FriendInfoDto>> search(@RequestParam String name) {
+        return ResponseEntity.ok(userService.searchByUserName(name));
+    }
 }

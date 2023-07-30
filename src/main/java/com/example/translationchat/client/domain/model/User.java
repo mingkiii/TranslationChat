@@ -65,5 +65,6 @@ public class User extends BaseEntity{
         joinColumns = @JoinColumn(name = "user_id"),
         inverseJoinColumns = @JoinColumn(name = "friend_id")
     )
+    @Builder.Default
     private Set<User> friends = new HashSet<>();
 }

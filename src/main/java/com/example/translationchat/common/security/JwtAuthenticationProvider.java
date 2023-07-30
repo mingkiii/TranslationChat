@@ -3,20 +3,25 @@ package com.example.translationchat.common.security;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.example.translationchat.client.domain.model.User;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
 import com.example.translationchat.common.security.principal.PrincipalDetailsService;
 import java.util.Base64;
 import java.util.Date;
 import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationProvider {
+    public static final String TOKEN_HEADER = "Authorization";
+    public static final String TOKEN_PREFIX = "Bearer ";
 
     private final PrincipalDetailsService principalDetailsService;
 
@@ -36,14 +41,15 @@ public class JwtAuthenticationProvider {
     }
 
     // Jwt 토큰 생성
-    public String createToken(Long id, String email) {
+    public String createToken(User user) {
         Date now = new Date();
-        return JWT.create()
-            .withSubject(email)
+        String token = JWT.create()
+            .withSubject(user.getEmail())
             .withExpiresAt(new Date(now.getTime() + TOKEN_VALID_TIME))
-            .withClaim("id", id)
-            .withClaim("email", email)
+            .withClaim("id", user.getId())
+            .withClaim("email", user.getEmail())
             .sign(getSign());
+        return TOKEN_PREFIX + token;
     }
 
     // 인증 객체 생성
@@ -51,6 +57,16 @@ public class JwtAuthenticationProvider {
         PrincipalDetails principalDetails = (PrincipalDetails) principalDetailsService.loadUserByUsername(this.getUserEmail(token));
         return new UsernamePasswordAuthenticationToken(principalDetails, "", principalDetails.getAuthorities());
     }
+
+    // 요청값에서 토큰만 추출
+    public String extractTokenFromRequest(HttpServletRequest request) {
+        String bearerToken = request.getHeader(TOKEN_HEADER);
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(TOKEN_PREFIX)) {
+            return bearerToken.substring(TOKEN_PREFIX.length());
+        }
+        return null;
+    }
+
     // 토큰 유효성 검증
     public boolean isValidateToken(String token) {
         // 토큰 만료시간이 현재시간보다 전이면 false
@@ -65,4 +81,6 @@ public class JwtAuthenticationProvider {
             .build()
             .verify(jwtToken);
     }
+
+
 }

@@ -6,6 +6,7 @@ import static com.example.translationchat.common.exception.ErrorCode.LOCK_FAILED
 import static com.example.translationchat.common.exception.ErrorCode.LOGIN_FAIL;
 import static com.example.translationchat.common.exception.ErrorCode.NOT_FOUND_USER;
 
+import com.example.translationchat.client.domain.dto.FriendInfoDto;
 import com.example.translationchat.client.domain.dto.UserInfoDto;
 import com.example.translationchat.client.domain.form.LoginForm;
 import com.example.translationchat.client.domain.form.SignUpForm;
@@ -19,6 +20,10 @@ import com.example.translationchat.common.exception.CustomException;
 import com.example.translationchat.common.redis.util.RedisLockUtil;
 import com.example.translationchat.common.security.JwtAuthenticationProvider;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
+import com.example.translationchat.server.handler.EchoHandler;
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,6 +31,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +43,8 @@ public class UserService {
     private final RedisLockUtil redisLockUtil;
     private final JwtAuthenticationProvider provider;
     private final AuthenticationManager authenticationManager;
+    private final NotificationService notificationService;
+    private final EchoHandler echoHandler;
 
     // 회원 가입
     @Transactional
@@ -82,7 +91,7 @@ public class UserService {
 
     // 로그인 (반환값 : 토큰)
     // AuthenticationManager 에서 회원 인증 처리
-    public String login(LoginForm form) {
+    public String login(LoginForm form) throws IOException {
         String email = form.getEmail();
         String password = form.getPassword();
 
@@ -96,12 +105,20 @@ public class UserService {
         if (authentication != null && authentication.isAuthenticated()) {
             PrincipalDetails principalDetails = (PrincipalDetails) authentication.getPrincipal();
 
-            Long authenticatedId = principalDetails.getUser().getId();
-            String authenticatedEmail = principalDetails.getUser().getEmail();
+            User user = principalDetails.getUser();
             // 로그인 시 활성 상태가 된다.
-            principalDetails.getUser().setStatus(ActiveStatus.ACTIVE);
+            user.setStatus(ActiveStatus.ONLINE);
 
-            return provider.createToken(authenticatedId, authenticatedEmail);
+            // 읽지 않은 알림 메세지 갯수 가져와서 알림메세지를 띄운다.
+            Long unreadNotification = notificationService.unreadNotificationCount(principalDetails);
+            if (unreadNotification > 0) {
+                TextMessage tmpMsg = new TextMessage(
+                    "읽지 않은 알림 메세지가 " + unreadNotification + "개 있습니다.");
+                WebSocketSession userSession = echoHandler.getUserSession(user.getName());
+                userSession.sendMessage(tmpMsg);
+            }
+
+            return provider.createToken(user);
         } else {
             throw new CustomException(LOGIN_FAIL);
         }
@@ -110,25 +127,20 @@ public class UserService {
     // 회원 탈퇴
     @Transactional
     public void delete(Authentication authentication) {
-        User user = userRepository.findByEmail(authentication.getName())
-            .orElseThrow(() -> new CustomException(NOT_FOUND_USER));
+        User user = getUser(authentication);
         userRepository.delete(user);
     }
 
     // 회원(본인) 정보 조회
     public UserInfoDto getInfo(Authentication authentication) {
-        User user = userRepository.findByEmail(authentication.getName())
-            .orElseThrow(() -> new CustomException(NOT_FOUND_USER));
+        User user = getUser(authentication);
         return UserInfoDto.from(user);
     }
 
     // 회원(본인) 정보 수정
     @Transactional
-    public UserInfoDto updateInfo(Authentication authentication,
-        UpdateUserForm form) {
-
-        User user = userRepository.findByEmail(authentication.getName())
-            .orElseThrow(() -> new CustomException(NOT_FOUND_USER));
+    public UserInfoDto updateInfo(Authentication authentication, UpdateUserForm form) {
+        User user = getUser(authentication);
 
         // 이름 변경
         String newName = form.getName();
@@ -175,5 +187,21 @@ public class UserService {
         userRepository.save(user);
 
         return UserInfoDto.from(user); // 변경된 유저 정보를 반환
+    }
+
+    // 다른 유저 검색
+    public List<FriendInfoDto> searchByUserName(String name) {
+        List<User> users = userRepository.searchByName(name);
+        if (users.isEmpty()) {
+            throw new CustomException(NOT_FOUND_USER);
+        }
+        return users.stream()
+            .map(FriendInfoDto::from)
+            .collect(Collectors.toList());
+    }
+
+    private User getUser(Authentication authentication) {
+        PrincipalDetails details = (PrincipalDetails) authentication.getPrincipal();
+        return details.getUser();
     }
 }

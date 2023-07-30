@@ -14,13 +14,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.example.translationchat.client.domain.dto.UserInfoDto;
-import com.example.translationchat.client.domain.form.UpdateUserForm;
-import com.example.translationchat.client.domain.type.Language;
-import com.example.translationchat.client.domain.type.Nationality;
-import com.example.translationchat.client.domain.model.User;
-import com.example.translationchat.client.service.UserService;
 import com.example.translationchat.client.domain.form.LoginForm;
 import com.example.translationchat.client.domain.form.SignUpForm;
+import com.example.translationchat.client.domain.form.UpdateUserForm;
+import com.example.translationchat.client.domain.model.User;
+import com.example.translationchat.client.domain.type.ActiveStatus;
+import com.example.translationchat.client.domain.type.Language;
+import com.example.translationchat.client.domain.type.Nationality;
+import com.example.translationchat.client.service.UserService;
+import com.example.translationchat.common.security.principal.PrincipalDetails;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,7 +31,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -57,7 +61,7 @@ class UserControllerTest {
         String expectedResult = "회원가입이 완료되었습니다.";
         when(userService.signUp(any(SignUpForm.class))).thenReturn(expectedResult);
 
-        mockMvc.perform(post("/user/signup")
+        mockMvc.perform(post("/ws/user/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(form)))
             .andExpect(status().isOk())
@@ -77,7 +81,7 @@ class UserControllerTest {
 
         when(userService.login(any(LoginForm.class))).thenReturn("로그인 성공 토큰");
 
-        mockMvc.perform(post("/user/login")
+        mockMvc.perform(post("/ws/user/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(form)))
             .andExpect(status().isOk())
@@ -89,7 +93,19 @@ class UserControllerTest {
     @DisplayName("회원 탈퇴 - 성공")
     @WithMockUser(username = "test@test.com")
     void testWithdraw_Success() throws Exception {
-        mockMvc.perform(delete("/user")
+        User user = User.builder()
+            .email("test@test.com")
+            .password("test123!")
+            .status(ActiveStatus.ONLINE)
+            .build();
+
+        // 가짜 사용자로 인증 정보 생성
+        PrincipalDetails principalDetails = new PrincipalDetails(user);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(principalDetails, null,
+            principalDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        mockMvc.perform(delete("/ws/user")
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk());
     }
@@ -109,7 +125,7 @@ class UserControllerTest {
 
         when(userService.getInfo(any(Authentication.class))).thenReturn(userInfoDto);
 
-        mockMvc.perform(get("/user")
+        mockMvc.perform(get("/ws/user")
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.email", is("test@test.com")))
@@ -140,7 +156,7 @@ class UserControllerTest {
         when(userService.updateInfo(any(Authentication.class), any(
             UpdateUserForm.class))).thenReturn(updatedUserInfo);
 
-        mockMvc.perform(put("/user")
+        mockMvc.perform(put("/ws/user")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(form)))
             .andExpect(status().isOk())

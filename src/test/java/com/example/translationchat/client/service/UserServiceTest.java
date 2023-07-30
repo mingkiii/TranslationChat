@@ -14,6 +14,7 @@ import com.example.translationchat.client.domain.type.Nationality;
 import com.example.translationchat.common.exception.CustomException;
 import com.example.translationchat.common.redis.util.RedisLockUtil;
 import com.example.translationchat.common.security.JwtAuthenticationProvider;
+import com.example.translationchat.server.handler.EchoHandler;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -48,12 +49,17 @@ class UserServiceTest {
     @Autowired
     private AuthenticationManager authenticationManager;
 
+    @Autowired
+    private EchoHandler echoHandler;
+    @Autowired
+    private NotificationService notificationService;
+
     private UserService userService;
 
     @BeforeEach
     public void setUp() {
         userService = new UserService(userRepository, passwordEncoder,
-            redisLockUtil, provider, authenticationManager);
+            redisLockUtil, provider, authenticationManager, notificationService, echoHandler);
     }
 
     // 회원가입 테스트

@@ -33,8 +33,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
+    implementation 'com.google.code.gson:gson:2.9.0'
     // querydsl 디펜던시 추가
     implementation "com.querydsl:querydsl-jpa:${queryDslVersion}"
     implementation "com.querydsl:querydsl-apt:${queryDslVersion}"
@@ -62,7 +64,7 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-def querydslDir = "$buildDir/generated/'querydsl'"
+def querydslDir = "$buildDir/generated/querydsl"
 
 // JPA 사용여부 및 사용 경로 설정
 querydsl {
@@ -83,8 +85,5 @@ compileQuerydsl {
 
 // querydsl이 compileClassPath를 상속하도록 설정
 configurations {
-    compileOnly {
-        extendsFrom annotationProcessor
-    }
     querydsl.extendsFrom compileClasspath
 }
