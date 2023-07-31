@@ -1,5 +1,6 @@
 package com.example.translationchat.client.service;
 
+import static com.example.translationchat.common.exception.ErrorCode.ALREADY_OPPONENT_REQUEST;
 import static com.example.translationchat.common.exception.ErrorCode.ALREADY_REGISTERED_FRIENDSHIP;
 import static com.example.translationchat.common.exception.ErrorCode.ALREADY_REQUEST_FRIENDSHIP;
 import static com.example.translationchat.common.exception.ErrorCode.CAN_NOT_FRIEND_YOURSELF;
@@ -32,8 +33,9 @@ public class FriendService {
 
     private final UserRepository userRepository;
     private final FriendshipRepository friendshipRepository;
+    private final NotificationService notificationService;
 
-    public NotificationForm requestFriend(Authentication authentication, String friendName) {
+    public String requestFriend(Authentication authentication, String friendName) {
         // 유저 : A, 친구 : B
         User user = getUser(authentication);
         if (user.getName().equals(friendName)) {
@@ -41,9 +43,21 @@ public class FriendService {
         }
         User friend = userRepository.findByName(friendName)
             .orElseThrow(() -> new CustomException(NOT_FOUND_USER));
-
+        // 유저 A의 친구기록을 가져옵니다.
         Optional<Friendship> optionalUserFriendship =
             friendshipRepository.findByUserAndFriend(user, friend);
+        // 유저 B의 친구기록을 가져옵니다.
+        Optional<Friendship> optionalFriendFriendship =
+            friendshipRepository.findByUserAndFriend(friend, user);
+
+        if (optionalFriendFriendship.isPresent()) {
+            Friendship friendFriendship = optionalFriendFriendship.get();
+            FriendshipStatus status = friendFriendship.getFriendshipStatus();
+            // 유저 B가 A에게 이미 친구 요청 중인 경우
+            if (status == FriendshipStatus.PENDING) {
+                throw new CustomException(ALREADY_OPPONENT_REQUEST);
+            }
+        }
 
         if (optionalUserFriendship.isPresent()) {
             Friendship userFriendship = optionalUserFriendship.get();
@@ -56,7 +70,8 @@ public class FriendService {
                     LocalDateTime requestTime = userFriendship.getRequestTime();
                     if (requestTime.isBefore(LocalDateTime.now().minusMonths(1))) {
                         // 요청날짜가 한달이 지났으면 다시 요청
-                        userFriendship.setRequestTime(LocalDateTime.now()); // 친구 요청 시간 초기화
+                        // 친구 요청 시간 초기화
+                        userFriendship.setRequestTime(LocalDateTime.now());
                         friendshipRepository.save(userFriendship);
                     } else {
                         // 요청날짜가 한달 미만이면 이미 요청 중인 상태로 유지
@@ -75,22 +90,32 @@ public class FriendService {
                 .friendshipStatus(FriendshipStatus.PENDING)
                 .build());
         }
-        return NotificationForm.builder()
+
+        NotificationForm form = NotificationForm.builder()
             .user(friend)
             .args(user.getName())
-            .contentType(ContentType.RECEIVE_FRIEND_REQUEST)
+            .contentType(ContentType.FRIEND_REQUEST)
             .build();
+        // 상대방에게 친구요청 알림 생성
+        notificationService.create(form);
+
+        return String.format("%s 님에게 %s",
+            friendName, ContentType.FRIEND_REQUEST.getDisplayName());
     }
 
     // 친구 요청 수락
-    public NotificationForm acceptFriendship(Authentication authentication, String requesterName) {
+    public String acceptFriendship(
+        Authentication authentication, Long notificationId, String requesterName
+    ) {
         User user = getUser(authentication);
         User requester = userRepository.findByName(requesterName)
             .orElseThrow(() -> new CustomException(NOT_FOUND_USER));
 
         // 요청 받은 유저의 '친구 레파지토리'에 요청자가 있는지 확인
-        Optional<Friendship> optionalUserFriendship = friendshipRepository.findByUserAndFriend(user, requester);
-        Friendship requesterFriendship = friendshipRepository.findByUserAndFriend(requester, user)
+        Optional<Friendship> optionalUserFriendship =
+            friendshipRepository.findByUserAndFriend(user, requester);
+        Friendship requesterFriendship =
+            friendshipRepository.findByUserAndFriend(requester, user)
             .orElseThrow(() -> new CustomException(NOT_FOUND_FRIENDSHIP));
 
         if (optionalUserFriendship.isPresent()) {
@@ -100,17 +125,7 @@ public class FriendService {
             switch (status) {
                 case ACCEPTED:
                     throw new CustomException(ALREADY_REGISTERED_FRIENDSHIP);
-                case PENDING:
-                    // 요청 받은 유저가 요청자에게 친구요청 상태인 경우 서로 친구로 등록
-                    userFriendship.setFriendshipStatus(FriendshipStatus.ACCEPTED);
-                    userFriendship.setAcceptTime(LocalDateTime.now());
-                    requesterFriendship.setFriendshipStatus(FriendshipStatus.ACCEPTED);
-                    requesterFriendship.setAcceptTime(LocalDateTime.now());
 
-                    friendshipRepository.save(userFriendship);
-                    friendshipRepository.save(requesterFriendship);
-
-                    break;
                 case BLOCKED:
                     throw new CustomException(FRIENDSHIP_STATUS_IS_BLOCKED);
             }
@@ -127,15 +142,23 @@ public class FriendService {
             requesterFriendship.setAcceptTime(LocalDateTime.now());
             friendshipRepository.save(requesterFriendship);
         }
-        return NotificationForm.builder()
+        NotificationForm form = NotificationForm.builder()
             .user(requester)
             .args(user.getName())
             .contentType(ContentType.SUCCESS_FRIENDSHIP)
             .build();
+        notificationService.create(form);
+        // 요청에 대한 알림을 읽을 걸로 간주하여 해당 알림 삭제합니다.
+        notificationService.delete(notificationId);
+
+        return String.format("%s 님과 %s",
+            requesterName, ContentType.SUCCESS_FRIENDSHIP.getDisplayName());
     }
 
     // 친구 요청 거절
-    public NotificationForm refuseFriendship(Authentication authentication, String requesterName) {
+    public String refuseFriendship(
+        Authentication authentication, Long notificationId, String requesterName
+    ) {
         User user = getUser(authentication);
         User requester = userRepository.findByName(requesterName)
             .orElseThrow(() -> new CustomException(NOT_FOUND_USER));
@@ -143,26 +166,33 @@ public class FriendService {
         // 요청 받은 유저의 '친구 레파지토리'에 요청자가 있는지 확인
         Optional<Friendship> optionalUserFriendship =
             friendshipRepository.findByUserAndFriend(user, requester);
-
-        NotificationForm form = NotificationForm.builder()
-            .user(requester)
-            .args(user.getName())
-            .contentType(ContentType.RECEIVE_REFUSE_REQUEST)
-            .build();
+        Friendship requesterFriendship =
+            friendshipRepository.findByUserAndFriend(requester, user)
+                .orElseThrow(() -> new CustomException(NOT_FOUND_FRIENDSHIP));
 
         if (optionalUserFriendship.isPresent()) {
             Friendship userFriendship = optionalUserFriendship.get();
             FriendshipStatus status = userFriendship.getFriendshipStatus();
             if (status == FriendshipStatus.ACCEPTED) {
                 throw new CustomException(ALREADY_REGISTERED_FRIENDSHIP);
-            }else if (status == FriendshipStatus.PENDING){
-                friendshipRepository.delete(userFriendship);
-                // 유저가 거절의 의미로 친구요청한 알림을 삭제하기 위해
-                form.setContentType(ContentType.RECEIVE_FRIEND_REQUEST);
             }
+            // 친구를 차단한 상태인 경우도 거절한 것으로 처리됩니다.
         }
-        // 친구를 차단한 상태면 자동으로 거절됩니다.
-        return  form;
+        // 거절로 요청자의 요청받은 유저와의 친구기록을 삭제합니다.
+        friendshipRepository.delete(requesterFriendship);
+        NotificationForm form = NotificationForm.builder()
+            .user(requester)
+            .args(user.getName())
+            .contentType(ContentType.REFUSE_FRIEND_REQUEST)
+            .build();
+
+        notificationService.create(form);
+
+        // 받은 요청에 대한 알림을 읽을 걸로 간주하여 해당 알림 삭제합니다.
+        notificationService.delete(notificationId);
+
+        return String.format("%s %s",
+            requesterName, ContentType.REFUSE_FRIEND_REQUEST.getDisplayName());
     }
 
     // 유저 차단
@@ -200,7 +230,8 @@ public class FriendService {
             friendshipRepository.findByUserAndFriend(user, friend);
         if (optionalUserFriendship.isPresent()) {
             Friendship userFriendship = optionalUserFriendship.get();
-            if (userFriendship.getFriendshipStatus() == FriendshipStatus.BLOCKED) {
+            if (userFriendship.getFriendshipStatus()
+                == FriendshipStatus.BLOCKED) {
                 friendshipRepository.delete(userFriendship);
             } else {
                 throw new CustomException(FRIENDSHIP_STATUS_IS_NOT_BLOCKED);
@@ -212,7 +243,9 @@ public class FriendService {
     }
 
     // 친구 관계 상태에 대한 친구목록 조회 (친구관계인 친구목록, 친구요청한 친구목록, 차단한 친구목록)
-    public Set<FriendInfoDto> getFriends(Authentication authentication, FriendshipStatus status) {
+    public Set<FriendInfoDto> getFriends(
+        Authentication authentication, FriendshipStatus status)
+    {
         User user = getUser(authentication);
         return friendshipRepository.findByUserAndFriendshipStatus(user, status)
             .stream()

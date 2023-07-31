@@ -22,6 +22,7 @@ public enum ErrorCode {
     FRIENDSHIP_STATUS_IS_BLOCKED(HttpStatus.BAD_REQUEST, "차단된 친구입니다."),
     FRIENDSHIP_STATUS_IS_NOT_BLOCKED(HttpStatus.BAD_REQUEST, "차단된 친구가 아닙니다."),
     NOT_FOUND_FRIENDSHIP(HttpStatus.BAD_REQUEST, "친구 기록이 없습니다."),
+    ALREADY_OPPONENT_REQUEST(HttpStatus.BAD_REQUEST, "이미 상대가 유저에게 친구 요청을 했습니다. 친구 요청 알림메세지를 확인해주세요."),
 
     NOT_FOUND_NOTIFICATION(HttpStatus.BAD_REQUEST, "해당 알림이 존재하지 않습니다."),
 

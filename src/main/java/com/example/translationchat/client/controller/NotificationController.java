@@ -2,8 +2,9 @@ package com.example.translationchat.client.controller;
 
 import com.example.translationchat.client.domain.dto.NotificationDto;
 import com.example.translationchat.client.service.NotificationService;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,8 +19,11 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @GetMapping("/unread-notifications")
-    public ResponseEntity<List<NotificationDto>> unreadNotifications(
-        Authentication authentication) {
-        return ResponseEntity.ok(notificationService.unreadNotifications(authentication));
+    public ResponseEntity<Page<NotificationDto>> unreadNotifications(
+        Authentication authentication, Pageable pageable
+    ) {
+        return ResponseEntity.ok(
+            notificationService.unreadNotifications(authentication, pageable)
+        );
     }
 }

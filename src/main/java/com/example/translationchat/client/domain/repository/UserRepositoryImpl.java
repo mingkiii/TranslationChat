@@ -15,11 +15,9 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
 
     @Override
     public List<User> searchByName(String name) {
-        String search = "%" + name + "%";
-
         QUser user = QUser.user;
         return queryFactory.selectFrom(user)
-            .where(user.name.like(search))
+            .where(user.name.contains(name))
             .fetch();
     }
 }

@@ -1,20 +1,17 @@
 package com.example.translationchat.client.service;
 
-import static com.example.translationchat.common.exception.ErrorCode.NOT_FOUND_NOTIFICATION;
-
 import com.example.translationchat.client.domain.dto.NotificationDto;
 import com.example.translationchat.client.domain.form.NotificationForm;
 import com.example.translationchat.client.domain.model.Notification;
 import com.example.translationchat.client.domain.model.User;
 import com.example.translationchat.client.domain.repository.NotificationRepository;
-import com.example.translationchat.common.exception.CustomException;
+import com.example.translationchat.client.domain.type.ContentType;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
 import com.example.translationchat.server.handler.EchoHandler;
 import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.TextMessage;
@@ -37,8 +34,33 @@ public class NotificationService {
             .build();
         Notification saveNotification = notificationRepository.save(notification);
 
-        // 생성된 알림 메시지를 WebSocket을 통해 해당 유저에게 전달
-        String message = saveNotification.getArgs()+ "," + saveNotification.getContent().getDisplayName();
+        // 생성된 알림 메시지를 WebSocket 을 통해 해당 유저에게 전달
+        String message = "";
+        // 친구요청
+        if (saveNotification.getContent() == ContentType.FRIEND_REQUEST) {
+            message = String.format("%s 님에게 %s 님이 %s",
+                user.getName(),
+                saveNotification.getArgs(),
+                saveNotification.getContent().getDisplayName()
+            );
+        }
+        // 친구 수락
+        if (saveNotification.getContent() == ContentType.SUCCESS_FRIENDSHIP) {
+            message = String.format("%s 님과 %s 님은 %s",
+                user.getName(),
+                saveNotification.getArgs(),
+                saveNotification.getContent().getDisplayName()
+            );
+        }
+        // 친구 요청 거절
+        if (saveNotification.getContent() == ContentType.REFUSE_FRIEND_REQUEST) {
+            message = String.format("%s 님이 %s %s",
+                saveNotification.getArgs(),
+                user.getName(),
+                saveNotification.getContent().getDisplayName()
+            );
+        }
+
         createNotification(user.getName(), message);
         return NotificationDto.from(saveNotification);
     }
@@ -58,32 +80,20 @@ public class NotificationService {
         }
     }
 
-    // 요청 했던 알람을 삭제하기 위해
-    public void delete(NotificationForm form) {
-        Notification notification = notificationRepository.findByArgsAndContent(
-                form.getArgs(), form.getContentType())
-            .orElseThrow(
-                () -> new CustomException(NOT_FOUND_NOTIFICATION));
-        notificationRepository.delete(notification);
-    }
-
     // 알림을 읽은 경우 삭제 (친구 요청알람의 경우 유저가 수락/거절 할 경우 읽은 경우로 간주하여 삭제)
     public void delete(Long id) {
-        Optional<Notification> optionalNotification = notificationRepository.findById(id);
-        if (optionalNotification.isPresent()) {
-            Notification notification = optionalNotification.get();
-
-            notificationRepository.delete(notification);
-        }
+        notificationRepository.findById(id)
+            .ifPresent(notificationRepository::delete);
     }
 
-    // 알림 목록 조회
-    public List<NotificationDto> unreadNotifications(Authentication authentication) {
+    // 알림 목록 조회 - 페이징 처리
+    public Page<NotificationDto> unreadNotifications(
+        Authentication authentication, Pageable pageable
+    ) {
         User user = getUser(authentication);
-        List<Notification> notifications = notificationRepository.findAllByUser(user);
-        return notifications.stream()
-            .map(NotificationDto::from)
-            .collect(Collectors.toList());
+        Page<Notification> notifications = notificationRepository.findAllByUser(user, pageable);
+
+        return notifications.map(NotificationDto::from);
     }
 
     // 알림 갯수 조회
