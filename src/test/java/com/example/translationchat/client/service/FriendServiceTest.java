@@ -1,6 +1,7 @@
 package com.example.translationchat.client.service;
 
-import static com.example.translationchat.common.exception.ErrorCode.ALREADY_REGISTERED_FRIENDSHIP;
+import static com.example.translationchat.common.exception.ErrorCode.ALREADY_OPPONENT_REQUEST;
+import static com.example.translationchat.common.exception.ErrorCode.ALREADY_REGISTERED_FRIEND;
 import static com.example.translationchat.common.exception.ErrorCode.ALREADY_REQUEST_FRIENDSHIP;
 import static com.example.translationchat.common.exception.ErrorCode.CAN_NOT_FRIEND_YOURSELF;
 import static com.example.translationchat.common.exception.ErrorCode.FRIENDSHIP_STATUS_IS_BLOCKED;
@@ -14,12 +15,10 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import com.example.translationchat.client.domain.dto.FriendInfoDto;
-import com.example.translationchat.client.domain.form.NotificationForm;
 import com.example.translationchat.client.domain.model.Friendship;
 import com.example.translationchat.client.domain.model.User;
 import com.example.translationchat.client.domain.repository.FriendshipRepository;
 import com.example.translationchat.client.domain.repository.UserRepository;
-import com.example.translationchat.client.domain.type.ContentType;
 import com.example.translationchat.client.domain.type.FriendshipStatus;
 import com.example.translationchat.client.domain.type.Language;
 import com.example.translationchat.client.domain.type.Nationality;
@@ -47,6 +46,9 @@ class FriendServiceTest {
     @Mock
     private FriendshipRepository friendshipRepository;
 
+    @Mock
+    private NotificationService notificationService;
+
     @InjectMocks
     private FriendService friendService;
 
@@ -68,16 +70,15 @@ class FriendServiceTest {
 
         when(userRepository.findByName(anyString())).thenReturn(Optional.of(friend));
         when(friendshipRepository.findByUserAndFriend(
-            any(User.class), any(User.class))).thenReturn(Optional.empty());
-
+            user, friend)).thenReturn(Optional.empty());
+        when(friendshipRepository.findByUserAndFriend(
+            friend, user)).thenReturn(Optional.empty());
         // when
-        NotificationForm form = friendService.requestFriend(
+        String result = friendService.requestFriend(
             createMockAuthentication(user), friend.getName());
 
         // then
-        assertEquals(ContentType.RECEIVE_FRIEND_REQUEST, form.getContentType());
-        assertEquals(user.getName(), form.getArgs());
-        assertEquals(friend, form.getUser());
+        assertEquals("friend 님에게 친구 요청하였습니다.", result);
     }
     @Test
     @DisplayName("친구 요청 - 실패_유저 자신에게 친구요청")
@@ -117,6 +118,36 @@ class FriendServiceTest {
         assertEquals(NOT_FOUND_USER, exception.getErrorCode());
     }
     @Test
+    @DisplayName("친구 요청 - 실패_친구가 이미 유저에게 요청한 경우")
+    public void testRequestFriend_Fail_ALREADY_OPPONENT_REQUEST() {
+        // given
+        User user = User.builder()
+            .id(1L)
+            .name("user")
+            .email("user1@example.com")
+            .build();
+        User friend = User.builder()
+            .id(1L)
+            .name("friend")
+            .email("friend@example.com")
+            .build();
+        Friendship friendFriendship = Friendship.builder()
+            .user(friend)
+            .friend(user)
+            .friendshipStatus(FriendshipStatus.PENDING)
+            .build();
+
+        when(userRepository.findByName(anyString())).thenReturn(Optional.of(friend));
+        when(friendshipRepository.findByUserAndFriend(
+            any(User.class), any(User.class))).thenReturn(Optional.of(friendFriendship));
+        // when
+        CustomException exception = assertThrows(CustomException.class,
+            () -> friendService.requestFriend(createMockAuthentication(user), friend.getName()));
+
+        // then
+        assertEquals(ALREADY_OPPONENT_REQUEST, exception.getErrorCode());
+    }
+    @Test
     @DisplayName("친구 요청 - 실패_이미 친구 상태")
     public void testRequestFriend_Fail_ALREADY_REGISTERED_FRIENDSHIP() {
         // given
@@ -145,7 +176,7 @@ class FriendServiceTest {
             () -> friendService.requestFriend(createMockAuthentication(user), friendName));
 
         // then
-        assertEquals(ALREADY_REGISTERED_FRIENDSHIP, exception.getErrorCode());
+        assertEquals(ALREADY_REGISTERED_FRIEND, exception.getErrorCode());
     }
     @Test
     @DisplayName("친구 요청 - 실패_이미 요청 중인 상태")
@@ -171,7 +202,9 @@ class FriendServiceTest {
 
         when(userRepository.findByName(anyString())).thenReturn(Optional.of(friend));
         when(friendshipRepository.findByUserAndFriend(
-            any(User.class), any(User.class))).thenReturn(Optional.of(userFriendship));
+            user, friend)).thenReturn(Optional.of(userFriendship));
+        when(friendshipRepository.findByUserAndFriend(
+            friend, user)).thenReturn(Optional.empty());
         // when
         CustomException exception = assertThrows(CustomException.class,
             () -> friendService.requestFriend(createMockAuthentication(user), friendName));
@@ -215,6 +248,7 @@ class FriendServiceTest {
     @DisplayName("친구 요청 수락 - 성공")
     public void testAcceptFriendship() {
         // given
+        Long notificationId = 1L;
         User user = User.builder()
             .id(1L)
             .name("user")
@@ -235,17 +269,17 @@ class FriendServiceTest {
         when(friendshipRepository.findByUserAndFriend(user, requester)).thenReturn(Optional.empty());
         when(friendshipRepository.findByUserAndFriend(requester,user)).thenReturn(Optional.of(requesterFriendship));
         // when
-        NotificationForm form = friendService.acceptFriendship(createMockAuthentication(user), requester.getName());
+        String result = friendService.acceptFriendship(
+            createMockAuthentication(user), notificationId, requester.getName());
 
         // then
-        assertEquals(ContentType.SUCCESS_FRIENDSHIP, form.getContentType());
-        assertEquals(requester, form.getUser());
-        assertEquals(user.getName(), form.getArgs());
+        assertEquals("requester 님과 친구가 되었습니다.", result);
     }
     @Test
     @DisplayName("친구 요청 수락 - 실패_요청자 찾을 수 없음")
     public void testAcceptFriendship_Fail_NOT_FOUND_USER() {
         // given
+        Long notificationId = 1L;
         String requester = "requester";
         User user = User.builder()
             .id(1L)
@@ -256,7 +290,7 @@ class FriendServiceTest {
         when(userRepository.findByName(requester)).thenReturn(Optional.empty());
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () ->  friendService.acceptFriendship(createMockAuthentication(user), requester));
+            () ->  friendService.acceptFriendship(createMockAuthentication(user), notificationId, requester));
 
         // then
         assertEquals(NOT_FOUND_USER, exception.getErrorCode());
@@ -265,6 +299,7 @@ class FriendServiceTest {
     @DisplayName("친구 요청 수락 - 실패_요청자의 요청기록 없음")
     public void testAcceptFriendship_Fail_NOT_FOUND_FRIENDSHIP() {
         // given
+        Long notificationId = 1L;
         User user = User.builder()
             .id(1L)
             .name("user")
@@ -281,7 +316,7 @@ class FriendServiceTest {
 
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () ->  friendService.acceptFriendship(createMockAuthentication(user), requester.getName()));
+            () ->  friendService.acceptFriendship(createMockAuthentication(user), notificationId, requester.getName()));
 
         // then
         assertEquals(NOT_FOUND_FRIENDSHIP, exception.getErrorCode());
@@ -290,6 +325,7 @@ class FriendServiceTest {
     @DisplayName("친구 요청 수락 - 실패_이미 친구 관계")
     public void testAcceptFriendship_Fail_ALREADY_REGISTERED_FRIENDSHIP() {
         // given
+        Long notificationId = 1L;
         User user = User.builder()
             .id(1L)
             .name("user")
@@ -316,15 +352,16 @@ class FriendServiceTest {
         when(friendshipRepository.findByUserAndFriend(requester,user)).thenReturn(Optional.of(requesterFriendship));
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () ->  friendService.acceptFriendship(createMockAuthentication(user), requester.getName()));
+            () ->  friendService.acceptFriendship(createMockAuthentication(user), notificationId, requester.getName()));
 
         // then
-        assertEquals(ALREADY_REGISTERED_FRIENDSHIP, exception.getErrorCode());
+        assertEquals(ALREADY_REGISTERED_FRIEND, exception.getErrorCode());
     }
     @Test
     @DisplayName("친구 요청 수락 - 실패_유저가 요청자를 차단한 경우")
     public void testAcceptFriendship_Fail_FRIENDSHIP_STATUS_IS_BLOCKED() {
         // given
+        Long notificationId = 1L;
         User user = User.builder()
             .id(1L)
             .name("user")
@@ -351,7 +388,7 @@ class FriendServiceTest {
         when(friendshipRepository.findByUserAndFriend(requester,user)).thenReturn(Optional.of(requesterFriendship));
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () ->  friendService.acceptFriendship(createMockAuthentication(user), requester.getName()));
+            () ->  friendService.acceptFriendship(createMockAuthentication(user), notificationId, requester.getName()));
 
         // then
         assertEquals(FRIENDSHIP_STATUS_IS_BLOCKED, exception.getErrorCode());
@@ -362,6 +399,7 @@ class FriendServiceTest {
     @DisplayName("친구 요청 거절 - 성공")
     public void testRefuseFriendship() {
         // given
+        Long notificationId = 1L;
         User user = User.builder()
             .id(1L)
             .name("user")
@@ -372,22 +410,28 @@ class FriendServiceTest {
             .name("requester")
             .email("requester@example.com")
             .build();
+        Friendship requesterFriendship = Friendship.builder()
+            .user(requester)
+            .friend(user)
+            .friendshipStatus(FriendshipStatus.PENDING)
+            .build();
 
         when(userRepository.findByName(anyString())).thenReturn(Optional.of(requester));
-        when(friendshipRepository.findByUserAndFriend(any(User.class), any(User.class)))
-            .thenReturn(Optional.empty());
+        when(friendshipRepository.findByUserAndFriend(
+            requester, user)).thenReturn(Optional.of(requesterFriendship));
+        when(friendshipRepository.findByUserAndFriend(
+            user, requester)).thenReturn(Optional.empty());
         // when
-        NotificationForm form = friendService.refuseFriendship(createMockAuthentication(user), requester.getName());
+        String result = friendService.refuseFriendship(createMockAuthentication(user), notificationId, requester.getName());
 
         // then
-        assertEquals(ContentType.RECEIVE_REFUSE_REQUEST, form.getContentType());
-        assertEquals(requester, form.getUser());
-        assertEquals(user.getName(), form.getArgs());
+        assertEquals("requester 님의 친구 요청을 거절했습니다.", result);
     }
     @Test
     @DisplayName("친구 요청 거절 - 실패_요청자 찾을 수 없음")
     public void testRefuseFriendship_Fail_NOT_FOUND_USER() {
         // given
+        Long notificationId = 1L;
         String requester = "requester";
         User user = User.builder()
             .id(1L)
@@ -398,7 +442,7 @@ class FriendServiceTest {
         when(userRepository.findByName(requester)).thenReturn(Optional.empty());
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () ->  friendService.refuseFriendship(createMockAuthentication(user), requester));
+            () ->  friendService.refuseFriendship(createMockAuthentication(user), notificationId, requester));
 
         // then
         assertEquals(NOT_FOUND_USER, exception.getErrorCode());
@@ -411,6 +455,7 @@ class FriendServiceTest {
     @DisplayName("친구 요청 거절 - 실패_이미 친구 관계")
     public void testRefuseFriendship_Fail_ALREADY_REGISTERED_FRIENDSHIP() {
         // given
+        Long notificationId = 1L;
         User user = User.builder()
             .id(1L)
             .name("user")
@@ -437,10 +482,10 @@ class FriendServiceTest {
         when(friendshipRepository.findByUserAndFriend(requester,user)).thenReturn(Optional.of(requesterFriendship));
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () ->  friendService.refuseFriendship(createMockAuthentication(user), requester.getName()));
+            () ->  friendService.refuseFriendship(createMockAuthentication(user), notificationId, requester.getName()));
 
         // then
-        assertEquals(ALREADY_REGISTERED_FRIENDSHIP, exception.getErrorCode());
+        assertEquals(ALREADY_REGISTERED_FRIEND, exception.getErrorCode());
     }
 
     // 유저 차단
@@ -481,7 +526,7 @@ class FriendServiceTest {
         when(userRepository.findByName(friend)).thenReturn(Optional.empty());
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () ->  friendService.refuseFriendship(createMockAuthentication(user), friend));
+            () ->  friendService.block(createMockAuthentication(user), friend));
 
         // then
         assertEquals(NOT_FOUND_USER, exception.getErrorCode());
@@ -530,7 +575,7 @@ class FriendServiceTest {
         when(userRepository.findByName(anyString())).thenReturn(Optional.empty());
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () ->  friendService.refuseFriendship(createMockAuthentication(user), friend));
+            () ->  friendService.unBlock(createMockAuthentication(user), friend));
 
         // then
         assertEquals(NOT_FOUND_USER, exception.getErrorCode());

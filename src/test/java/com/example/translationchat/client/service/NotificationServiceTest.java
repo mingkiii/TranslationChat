@@ -23,6 +23,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.socket.TextMessage;
@@ -88,25 +92,27 @@ public class NotificationServiceTest {
             .id(10L)
             .user(user)
             .args("friend1")
-            .content(ContentType.RECEIVE_FRIEND_REQUEST)
+            .content(ContentType.REFUSE_FRIEND_REQUEST)
             .build();
         Notification notification2 = Notification.builder()
             .id(15L)
             .user(user)
             .args("friend2")
-            .content(ContentType.RECEIVE_REFUSE_REQUEST)
+            .content(ContentType.SUCCESS_FRIENDSHIP)
             .build();
         List<Notification> notifications = new ArrayList<>();
         notifications.add(notification1);
         notifications.add(notification2);
 
-        when(notificationRepository.findAllByUser(user)).thenReturn(notifications);
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Notification> notificationPage = new PageImpl<>(notifications, pageable, notifications.size());
+        when(notificationRepository.findAllByUser(user, pageable)).thenReturn(notificationPage);
         // when
-        List<NotificationDto> result =
-            notificationService.unreadNotifications(createMockAuthentication(user));
+        Page<NotificationDto> result =
+            notificationService.unreadNotifications(createMockAuthentication(user), pageable);
 
         // then
-        assertEquals(notifications.size(), result.size());
+        assertEquals(2, result.getContent().size());
     }
 
     private Authentication createMockAuthentication(User user) {

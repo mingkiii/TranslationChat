@@ -7,8 +7,10 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -55,13 +57,13 @@ public class FriendController {
     }
 
     // 친구 차단
-    @PostMapping("/block")
+    @PutMapping("/block")
     public ResponseEntity<String> block(Authentication authentication, @RequestParam String friendName) {
         return ResponseEntity.ok(friendService.block(authentication, friendName));
     }
 
     // 차단 해제
-    @PostMapping("/unblock")
+    @PutMapping("/unblock")
     public ResponseEntity<String> unblock(Authentication authentication, @RequestParam String friendName) {
         return ResponseEntity.ok(friendService.unBlock(authentication, friendName));
     }
@@ -86,5 +88,11 @@ public class FriendController {
         return ResponseEntity.ok(friendService.getFriends(
             authentication, FriendshipStatus.BLOCKED)
         );
+    }
+
+    // 친구 삭제
+    @DeleteMapping
+    public void delete(Authentication authentication, @RequestParam String friendName) {
+        friendService.delete(authentication, friendName);
     }
 }

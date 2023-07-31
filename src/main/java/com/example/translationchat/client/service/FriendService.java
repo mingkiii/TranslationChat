@@ -1,13 +1,14 @@
 package com.example.translationchat.client.service;
 
 import static com.example.translationchat.common.exception.ErrorCode.ALREADY_OPPONENT_REQUEST;
-import static com.example.translationchat.common.exception.ErrorCode.ALREADY_REGISTERED_FRIENDSHIP;
+import static com.example.translationchat.common.exception.ErrorCode.ALREADY_REGISTERED_FRIEND;
 import static com.example.translationchat.common.exception.ErrorCode.ALREADY_REQUEST_FRIENDSHIP;
 import static com.example.translationchat.common.exception.ErrorCode.CAN_NOT_FRIEND_YOURSELF;
 import static com.example.translationchat.common.exception.ErrorCode.FRIENDSHIP_STATUS_IS_BLOCKED;
 import static com.example.translationchat.common.exception.ErrorCode.FRIENDSHIP_STATUS_IS_NOT_BLOCKED;
 import static com.example.translationchat.common.exception.ErrorCode.NOT_FOUND_FRIENDSHIP;
 import static com.example.translationchat.common.exception.ErrorCode.NOT_FOUND_USER;
+import static com.example.translationchat.common.exception.ErrorCode.NOT_REGISTERED_FRIEND;
 
 import com.example.translationchat.client.domain.dto.FriendInfoDto;
 import com.example.translationchat.client.domain.form.NotificationForm;
@@ -64,7 +65,7 @@ public class FriendService {
             FriendshipStatus status = userFriendship.getFriendshipStatus();
             switch (status) {
                 case ACCEPTED:
-                    throw new CustomException(ALREADY_REGISTERED_FRIENDSHIP);
+                    throw new CustomException(ALREADY_REGISTERED_FRIEND);
                 case PENDING:
                     // A가 B에게 친구 요청한 상태인 경우
                     LocalDateTime requestTime = userFriendship.getRequestTime();
@@ -124,7 +125,7 @@ public class FriendService {
 
             switch (status) {
                 case ACCEPTED:
-                    throw new CustomException(ALREADY_REGISTERED_FRIENDSHIP);
+                    throw new CustomException(ALREADY_REGISTERED_FRIEND);
 
                 case BLOCKED:
                     throw new CustomException(FRIENDSHIP_STATUS_IS_BLOCKED);
@@ -174,7 +175,7 @@ public class FriendService {
             Friendship userFriendship = optionalUserFriendship.get();
             FriendshipStatus status = userFriendship.getFriendshipStatus();
             if (status == FriendshipStatus.ACCEPTED) {
-                throw new CustomException(ALREADY_REGISTERED_FRIENDSHIP);
+                throw new CustomException(ALREADY_REGISTERED_FRIEND);
             }
             // 친구를 차단한 상태인 경우도 거절한 것으로 처리됩니다.
         }
@@ -252,6 +253,21 @@ public class FriendService {
             .map(Friendship::getFriend)
             .map(FriendInfoDto::from)
             .collect(Collectors.toSet());
+    }
+
+    // 친구 삭제
+    public void delete(Authentication authentication, String friendName) {
+        User user = getUser(authentication);
+        User friend = userRepository.findByName(friendName)
+            .orElseThrow(() -> new CustomException(NOT_FOUND_USER));
+
+        Friendship friendship = friendshipRepository.findByUserAndFriend(user, friend)
+            .orElseThrow(() -> new CustomException(NOT_FOUND_FRIENDSHIP));
+        if (friendship.getFriendshipStatus() == FriendshipStatus.ACCEPTED) {
+            friendshipRepository.delete(friendship);
+        } else {
+            throw new CustomException(NOT_REGISTERED_FRIEND);
+        }
     }
 
     private User getUser(Authentication authentication) {
