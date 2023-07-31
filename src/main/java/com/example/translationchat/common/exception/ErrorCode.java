@@ -17,7 +17,8 @@ public enum ErrorCode {
     LOGIN_REQUIRED(HttpStatus.BAD_REQUEST, "인증이 유효하지 않습니다. 다시 로그인 후 이용해주세요."),
 
     CAN_NOT_FRIEND_YOURSELF(HttpStatus.BAD_REQUEST, "사용자 자신을 친구 요청 할 수 없습니다."),
-    ALREADY_REGISTERED_FRIENDSHIP(HttpStatus.BAD_REQUEST, "이미 친구로 등록 되어있습니다."),
+    ALREADY_REGISTERED_FRIEND(HttpStatus.BAD_REQUEST, "이미 친구로 등록 되어있습니다."),
+    NOT_REGISTERED_FRIEND(HttpStatus.BAD_REQUEST, "친구로 등록된 친구만 삭제할 수 있습니다."),
     ALREADY_REQUEST_FRIENDSHIP(HttpStatus.BAD_REQUEST, "이미 친구 요청을 한 지 한달이 안됐습니다."),
     FRIENDSHIP_STATUS_IS_BLOCKED(HttpStatus.BAD_REQUEST, "차단된 친구입니다."),
     FRIENDSHIP_STATUS_IS_NOT_BLOCKED(HttpStatus.BAD_REQUEST, "차단된 친구가 아닙니다."),
