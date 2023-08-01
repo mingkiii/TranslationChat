@@ -4,12 +4,13 @@ import com.example.translationchat.client.domain.type.ActiveStatus;
 import com.example.translationchat.client.domain.type.Language;
 import com.example.translationchat.client.domain.type.Nationality;
 import com.example.translationchat.common.model.BaseEntity;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -59,12 +60,12 @@ public class User extends BaseEntity{
     @Column
     private boolean randomApproval;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "friendship",
+        name = "favorite",
         joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "friend_id")
+        inverseJoinColumns = @JoinColumn(name = "favorite_id")
     )
     @Builder.Default
-    private Set<User> friends = new HashSet<>();
+    private List<User> favoriteList = new ArrayList<>();
 }

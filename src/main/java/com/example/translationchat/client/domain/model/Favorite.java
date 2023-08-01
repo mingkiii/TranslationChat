@@ -1,12 +1,9 @@
 package com.example.translationchat.client.domain.model;
 
-import com.example.translationchat.client.domain.type.FriendshipStatus;
 import com.example.translationchat.common.model.BaseEntity;
-import java.time.LocalDateTime;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -26,26 +23,19 @@ import org.hibernate.envers.AuditOverride;
 @NoArgsConstructor
 @AllArgsConstructor
 @AuditOverride(forClass = BaseEntity.class)
-public class Friendship extends BaseEntity{
+public class Favorite extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "friend_id")
-    private User friend;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "favorite_id")
+    private User favorite;
 
-    @Column
-    @Enumerated(EnumType.STRING)
-    private FriendshipStatus friendshipStatus;
-
-    @Column
-    private LocalDateTime requestTime;
-
-    @Column
-    private LocalDateTime acceptTime;
+    @Column(columnDefinition = "boolean default false")
+    private boolean blocked;
 }

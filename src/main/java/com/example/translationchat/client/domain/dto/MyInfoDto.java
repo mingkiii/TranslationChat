@@ -11,19 +11,17 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FriendInfoDto {
+public class MyInfoDto {
 
+    private String email;
     private String name;
     private Nationality nationality;
     private String language;
     private boolean randomApproval;
 
-    public static FriendInfoDto from(User user) {
-        if (user == null) {
-            return null;
-        }
-
-        return FriendInfoDto.builder()
+    public static MyInfoDto from(User user) {
+        return MyInfoDto.builder()
+            .email(user.getEmail())
             .name(user.getName())
             .nationality(user.getNationality())
             .language(user.getLanguage().getDisplayName())

@@ -15,7 +15,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.example.translationchat.client.domain.dto.FriendInfoDto;
+import com.example.translationchat.client.domain.dto.MyInfoDto;
 import com.example.translationchat.client.domain.dto.UserInfoDto;
 import com.example.translationchat.client.domain.form.LoginForm;
 import com.example.translationchat.client.domain.form.UpdateUserForm;
@@ -153,7 +153,7 @@ public class UserServiceMockTest {
         when(userRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
 
         // when
-        UserInfoDto userInfo = userService.getInfo(createMockAuthentication(user));
+        MyInfoDto userInfo = userService.getInfo(createMockAuthentication(user));
 
         // then
         assertNotNull(userInfo);
@@ -189,7 +189,7 @@ public class UserServiceMockTest {
         when(userRepository.existsByName(form.getName())).thenReturn(false);
         when(redisLockUtil.getLock(anyString(), anyLong())).thenReturn(true);
         // when
-        UserInfoDto updatedUserInfo = userService.updateInfo(createMockAuthentication(user), form);
+        MyInfoDto updatedUserInfo = userService.updateInfo(createMockAuthentication(user), form);
 
         // then
         assertNotNull(updatedUserInfo);
@@ -247,7 +247,7 @@ public class UserServiceMockTest {
 
         when(userRepository.searchByName(name)).thenReturn(users);
         //when
-        List<FriendInfoDto> result = userService.searchByUserName(name);
+        List<UserInfoDto> result = userService.searchByUserName(name);
         //then
         assertThat(result).hasSize(2);
         assertThat(result.get(0).getName()).isEqualTo("kim_minHo");

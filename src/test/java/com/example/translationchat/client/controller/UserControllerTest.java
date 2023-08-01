@@ -13,7 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.example.translationchat.client.domain.dto.UserInfoDto;
+import com.example.translationchat.client.domain.dto.MyInfoDto;
 import com.example.translationchat.client.domain.form.LoginForm;
 import com.example.translationchat.client.domain.form.SignUpForm;
 import com.example.translationchat.client.domain.form.UpdateUserForm;
@@ -121,7 +121,7 @@ class UserControllerTest {
             .nationality(Nationality.UK)
             .language(Language.FR)
             .build();
-        UserInfoDto userInfoDto = UserInfoDto.from(user);
+        MyInfoDto userInfoDto = MyInfoDto.from(user);
 
         when(userService.getInfo(any(Authentication.class))).thenReturn(userInfoDto);
 
@@ -146,7 +146,7 @@ class UserControllerTest {
             .language(Language.FR)
             .build();
 
-        UserInfoDto updatedUserInfo = UserInfoDto.builder()
+        MyInfoDto updatedUserInfo = MyInfoDto.builder()
             .email("test@test.com")
             .name("new_test")
             .nationality(Nationality.UK)

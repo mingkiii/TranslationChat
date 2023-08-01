@@ -6,7 +6,7 @@ import static com.example.translationchat.common.exception.ErrorCode.LOCK_FAILED
 import static com.example.translationchat.common.exception.ErrorCode.LOGIN_FAIL;
 import static com.example.translationchat.common.exception.ErrorCode.NOT_FOUND_USER;
 
-import com.example.translationchat.client.domain.dto.FriendInfoDto;
+import com.example.translationchat.client.domain.dto.MyInfoDto;
 import com.example.translationchat.client.domain.dto.UserInfoDto;
 import com.example.translationchat.client.domain.form.LoginForm;
 import com.example.translationchat.client.domain.form.SignUpForm;
@@ -132,14 +132,14 @@ public class UserService {
     }
 
     // 회원(본인) 정보 조회
-    public UserInfoDto getInfo(Authentication authentication) {
+    public MyInfoDto getInfo(Authentication authentication) {
         User user = getUser(authentication);
-        return UserInfoDto.from(user);
+        return MyInfoDto.from(user);
     }
 
     // 회원(본인) 정보 수정
     @Transactional
-    public UserInfoDto updateInfo(Authentication authentication, UpdateUserForm form) {
+    public MyInfoDto updateInfo(Authentication authentication, UpdateUserForm form) {
         User user = getUser(authentication);
 
         // 이름 변경
@@ -186,17 +186,17 @@ public class UserService {
 
         userRepository.save(user);
 
-        return UserInfoDto.from(user); // 변경된 유저 정보를 반환
+        return MyInfoDto.from(user); // 변경된 유저 정보를 반환
     }
 
     // 다른 유저 검색
-    public List<FriendInfoDto> searchByUserName(String name) {
+    public List<UserInfoDto> searchByUserName(String name) {
         List<User> users = userRepository.searchByName(name);
         if (users.isEmpty()) {
             throw new CustomException(NOT_FOUND_USER);
         }
         return users.stream()
-            .map(FriendInfoDto::from)
+            .map(UserInfoDto::from)
             .collect(Collectors.toList());
     }
 

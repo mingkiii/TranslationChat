@@ -1,6 +1,6 @@
 package com.example.translationchat.client.controller;
 
-import com.example.translationchat.client.domain.dto.FriendInfoDto;
+import com.example.translationchat.client.domain.dto.MyInfoDto;
 import com.example.translationchat.client.domain.dto.UserInfoDto;
 import com.example.translationchat.client.domain.form.LoginForm;
 import com.example.translationchat.client.domain.form.SignUpForm;
@@ -48,20 +48,20 @@ public class UserController {
 
     // 회원(본인) 정보 조회
     @GetMapping
-    public ResponseEntity<UserInfoDto> getInfo(Authentication authentication) {
+    public ResponseEntity<MyInfoDto> getInfo(Authentication authentication) {
         return ResponseEntity.ok(userService.getInfo(authentication));
     }
 
     // 회원(본인) 정보 수정
     @PutMapping
-    public ResponseEntity<UserInfoDto> updateInfo(
+    public ResponseEntity<MyInfoDto> updateInfo(
         Authentication authentication, @Valid UpdateUserForm form
     ) {
         return ResponseEntity.ok(userService.updateInfo(authentication, form));
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<FriendInfoDto>> search(@RequestParam String name) {
+    public ResponseEntity<List<UserInfoDto>> search(@RequestParam String name) {
         return ResponseEntity.ok(userService.searchByUserName(name));
     }
 }
