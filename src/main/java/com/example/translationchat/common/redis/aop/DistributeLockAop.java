@@ -1,6 +1,5 @@
 package com.example.translationchat.common.redis.aop;
 
-import com.example.translationchat.common.redis.util.CustomSpringELParser;
 import java.lang.reflect.Method;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

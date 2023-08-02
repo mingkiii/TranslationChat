@@ -1,4 +1,4 @@
-package com.example.translationchat.client.domain.model;
+package com.example.translationchat.client.domain.type;
 
 public enum Nationality {
     KOREA,
@@ -35,14 +35,5 @@ public enum Nationality {
     GREECE,
     CZECH_REPUBLIC,
     NEW_ZEALAND,
-    OTHER;
-
-    public static Nationality toEnumType(String nationalityString) {
-        try {
-            return Nationality.valueOf(nationalityString);
-        } catch (IllegalArgumentException e) {
-            // 일치하는 열거형 값이 없는 경우 OTHER 로 처리
-            return OTHER;
-        }
-    }
+    OTHER
 }

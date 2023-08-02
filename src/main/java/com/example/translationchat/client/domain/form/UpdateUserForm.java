@@ -1,7 +1,8 @@
 package com.example.translationchat.client.domain.form;
 
-import com.example.translationchat.client.domain.model.Language;
-import com.example.translationchat.client.domain.model.Nationality;
+import com.example.translationchat.client.domain.type.ActiveStatus;
+import com.example.translationchat.client.domain.type.Language;
+import com.example.translationchat.client.domain.type.Nationality;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -24,4 +25,5 @@ public class UpdateUserForm {
 
     private Nationality nationality;
     private Language language;
+    private ActiveStatus status;
 }

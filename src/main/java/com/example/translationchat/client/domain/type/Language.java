@@ -1,4 +1,4 @@
-package com.example.translationchat.client.domain.model;
+package com.example.translationchat.client.domain.type;
 
 public enum Language {
     KO("Korean"),
@@ -23,14 +23,5 @@ public enum Language {
 
     public String getDisplayName() {
         return displayName;
-    }
-
-    public static Language toEnumType(String displayName) {
-        for (Language language : Language.values()) {
-            if (language.displayName.equalsIgnoreCase(displayName)) {
-                return language;
-            }
-        }
-        throw new IllegalArgumentException(displayName + ": 지원하지 않는 언어입니다.");
     }
 }

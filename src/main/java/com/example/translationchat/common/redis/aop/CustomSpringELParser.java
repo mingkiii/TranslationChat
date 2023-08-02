@@ -1,4 +1,4 @@
-package com.example.translationchat.common.redis.util;
+package com.example.translationchat.common.redis.aop;
 
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
