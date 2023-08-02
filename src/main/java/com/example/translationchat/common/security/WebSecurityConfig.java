@@ -39,9 +39,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
             .authorizeRequests()
-            .antMatchers("/ws/user/signup", "/ws/user/login").permitAll()
+            .antMatchers("/user/signup", "/user/login").permitAll()
             // 회원 가입 및 로그인은 모든 사용자 접근 가능
-            .antMatchers("/ws/**").authenticated()
+            .anyRequest().authenticated()
             // 인증된 사용자만 접근 가능
             .and()
             .addFilterBefore(new JwtAuthorizationFilter(provider),

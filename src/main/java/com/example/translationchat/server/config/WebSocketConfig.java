@@ -3,22 +3,22 @@ package com.example.translationchat.server.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
-import org.springframework.web.socket.config.annotation.EnableWebSocket;
+import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
 @Configuration
-@EnableWebSocket
+@EnableWebSocketMessageBroker
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
-    public void configureMessageBroker(MessageBrokerRegistry config) {
-        // 클라이언트가 서버로 메시지를 보낼 때 prefix 설정 (클라이언트가 "/app"으로 시작하는 경로로 메시지를 보냄)
-        config.setApplicationDestinationPrefixes("/app");
+    public void configureMessageBroker(MessageBrokerRegistry registry) {
+        // 클라이언트가 서버로 메시지를 보낼 때, 메시지를 발행하는 요청 url(메시지 송신)
+        registry.setApplicationDestinationPrefixes("/pub");
 
-        // 서버가 클라이언트에게 메시지를 보낼 때 prefix 설정 (서버에서 "/topic"으로 시작하는 경로로 메시지를 보냄)
-        config.enableSimpleBroker("/topic");
+        // 서버가 클라이언트에게 메시지를 보낼 때, 메시지를 구독하는 요청 url(메시지 수신)
+        registry.enableSimpleBroker("/sub");
     }
 
     @Override
@@ -28,9 +28,4 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
-
-//    @Override
-//    public void configureClientInboundChannel(ChannelRegistration registration) {
-//        registration.interceptors(stompHandler);
-//    }
 }

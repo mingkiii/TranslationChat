@@ -6,7 +6,6 @@ import com.example.translationchat.client.domain.form.LoginForm;
 import com.example.translationchat.client.domain.form.SignUpForm;
 import com.example.translationchat.client.domain.form.UpdateUserForm;
 import com.example.translationchat.client.service.UserService;
-import java.io.IOException;
 import java.util.List;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/ws/user")
+@RequestMapping("/user")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -36,8 +35,14 @@ public class UserController {
 
     // 로그인
     @PostMapping("/login")
-    public ResponseEntity<String> login(@Valid @RequestBody LoginForm form) throws IOException {
+    public ResponseEntity<String> login(@Valid @RequestBody LoginForm form) {
         return ResponseEntity.ok(userService.login(form));
+    }
+
+    // 로그아웃
+    @PutMapping("logout")
+    public void logout(Authentication authentication) {
+        userService.logout(authentication);
     }
 
     // 회원 탈퇴

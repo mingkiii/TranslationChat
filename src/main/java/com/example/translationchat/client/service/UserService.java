@@ -20,8 +20,6 @@ import com.example.translationchat.common.exception.CustomException;
 import com.example.translationchat.common.redis.util.RedisLockUtil;
 import com.example.translationchat.common.security.JwtAuthenticationProvider;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
-import com.example.translationchat.server.handler.EchoHandler;
-import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -31,8 +29,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.socket.TextMessage;
-import org.springframework.web.socket.WebSocketSession;
 
 @Service
 @RequiredArgsConstructor
@@ -43,8 +39,6 @@ public class UserService {
     private final RedisLockUtil redisLockUtil;
     private final JwtAuthenticationProvider provider;
     private final AuthenticationManager authenticationManager;
-    private final NotificationService notificationService;
-    private final EchoHandler echoHandler;
 
     // 회원 가입
     @Transactional
@@ -91,7 +85,7 @@ public class UserService {
 
     // 로그인 (반환값 : 토큰)
     // AuthenticationManager 에서 회원 인증 처리
-    public String login(LoginForm form) throws IOException {
+    public String login(LoginForm form) {
         String email = form.getEmail();
         String password = form.getPassword();
 
@@ -108,20 +102,20 @@ public class UserService {
             User user = principalDetails.getUser();
             // 로그인 시 활성 상태가 된다.
             user.setStatus(ActiveStatus.ONLINE);
-
-            // 읽지 않은 알림 메세지 갯수 가져와서 알림메세지를 띄운다.
-            Long unreadNotification = notificationService.unreadNotificationCount(principalDetails);
-            if (unreadNotification > 0) {
-                TextMessage tmpMsg = new TextMessage(
-                    "읽지 않은 알림 메세지가 " + unreadNotification + "개 있습니다.");
-                WebSocketSession userSession = echoHandler.getUserSession(user.getName());
-                userSession.sendMessage(tmpMsg);
-            }
+            userRepository.save(user);
 
             return provider.createToken(user);
         } else {
             throw new CustomException(LOGIN_FAIL);
         }
+    }
+
+    // 로그아웃
+    public void logout(Authentication authentication) {
+        User user = getUser(authentication);
+        // 로그아웃 시 활성 상태를 오프라인으로 업데이트
+        user.setStatus(ActiveStatus.OFFLINE);
+        userRepository.save(user);
     }
 
     // 회원 탈퇴

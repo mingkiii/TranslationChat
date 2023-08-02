@@ -61,7 +61,7 @@ class UserControllerTest {
         String expectedResult = "회원가입이 완료되었습니다.";
         when(userService.signUp(any(SignUpForm.class))).thenReturn(expectedResult);
 
-        mockMvc.perform(post("/ws/user/signup")
+        mockMvc.perform(post("/user/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(form)))
             .andExpect(status().isOk())
@@ -81,7 +81,7 @@ class UserControllerTest {
 
         when(userService.login(any(LoginForm.class))).thenReturn("로그인 성공 토큰");
 
-        mockMvc.perform(post("/ws/user/login")
+        mockMvc.perform(post("/user/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(form)))
             .andExpect(status().isOk())
@@ -105,7 +105,7 @@ class UserControllerTest {
             principalDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        mockMvc.perform(delete("/ws/user")
+        mockMvc.perform(delete("/user")
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk());
     }
@@ -125,7 +125,7 @@ class UserControllerTest {
 
         when(userService.getInfo(any(Authentication.class))).thenReturn(userInfoDto);
 
-        mockMvc.perform(get("/ws/user")
+        mockMvc.perform(get("/user")
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.email", is("test@test.com")))
@@ -156,7 +156,7 @@ class UserControllerTest {
         when(userService.updateInfo(any(Authentication.class), any(
             UpdateUserForm.class))).thenReturn(updatedUserInfo);
 
-        mockMvc.perform(put("/ws/user")
+        mockMvc.perform(put("/user")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(form)))
             .andExpect(status().isOk())

@@ -12,9 +12,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @Configuration
 @EnableTransactionManagement
-@EnableJpaRepositories(basePackages = "com.example.translationchat.client.domain.repository")
+@EnableJpaRepositories(basePackages = "com.example.translationchat")
 @EnableJpaAuditing
-@EntityScan("com.example.translationchat.client.domain.model")
+@EntityScan(basePackages = "com.example.translationchat")
 public class QueryDslConfig {
     @PersistenceContext
     private EntityManager entityManager;

@@ -27,8 +27,6 @@ import com.example.translationchat.common.exception.CustomException;
 import com.example.translationchat.common.redis.util.RedisLockUtil;
 import com.example.translationchat.common.security.JwtAuthenticationProvider;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
-import com.example.translationchat.server.handler.EchoHandler;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -41,7 +39,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.socket.WebSocketSession;
 
 @SpringBootTest
 public class UserServiceMockTest {
@@ -57,15 +54,11 @@ public class UserServiceMockTest {
     private PasswordEncoder passwordEncoder;
     @Mock
     private AuthenticationManager authenticationManager;
-    @Mock
-    private NotificationService notificationService;
-    @Mock
-    private EchoHandler echoHandler;
 
     // 로그인 테스트
     @Test
     @DisplayName("로그인_성공")
-    void testLogin_Success() throws IOException {
+    void testLogin_Success() {
         // given
         User user = User.builder()
             .id(1L)
@@ -84,9 +77,6 @@ public class UserServiceMockTest {
         when(authenticationManager.authenticate(authenticationToken)).thenReturn(authentication);
         when(authentication.isAuthenticated()).thenReturn(true);
         when(authentication.getPrincipal()).thenReturn(principalDetails);
-        WebSocketSession session = mock(WebSocketSession.class);
-        when(echoHandler.getUserSession(user.getName())).thenReturn(session);
-        when(notificationService.unreadNotificationCount(principalDetails)).thenReturn(3L);
         when(provider.createToken(user)).thenReturn("test_token");
 
         // when

@@ -27,7 +27,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     ) throws IOException, ServletException {
 
         String requestURI = request.getRequestURI();
-        if (requestURI.equals("/ws/user/signup") || requestURI.equals("/ws/user/login")) {
+        if (requestURI.equals("/user/signup") || requestURI.equals("/user/login")) {
             // 로그인과 회원 가입 엔드포인트는 토큰 검증 없이 통과시키기
             chain.doFilter(request, response);
             return;
