@@ -8,7 +8,7 @@ import static com.example.translationchat.common.exception.ErrorCode.USER_IS_NOT
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 import com.example.translationchat.client.domain.dto.UserInfoDto;
@@ -54,17 +54,17 @@ class FavoriteServiceTest {
             .email("user1@example.com")
             .build();
         User favorite = User.builder()
-            .id(1L)
+            .id(5L)
             .name("favorite")
             .email("favorite@example.com")
             .build();
 
-        when(userRepository.findByName(anyString())).thenReturn(Optional.of(favorite));
-        when(friendshipRepository.findByUserAndFavorite(user, favorite))
+        when(userRepository.findById(anyLong())).thenReturn(Optional.of(favorite));
+        when(friendshipRepository.findByUserAndFavoriteUser(user, favorite))
             .thenReturn(Optional.empty());
         // when
         String result = friendService.register(
-            createMockAuthentication(user), favorite.getName());
+            createMockAuthentication(user), 5L);
 
         // then
         assertEquals("favorite 님을 즐겨찾기에 추가했습니다.", result);
@@ -73,7 +73,7 @@ class FavoriteServiceTest {
     @DisplayName("즐겨찾기 등록 - 실패_유저 자신에게 즐겨찾기")
     public void testRegister_Fail_CAN_NOT_FAVORITE_YOURSELF() {
         // given
-        String favoriteName = "user";
+        Long favoriteUserId = 1L;
         User user = User.builder()
             .id(1L)
             .name("user")
@@ -82,7 +82,7 @@ class FavoriteServiceTest {
 
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () -> friendService.register(createMockAuthentication(user), favoriteName));
+            () -> friendService.register(createMockAuthentication(user), favoriteUserId));
 
         // then
         assertEquals(CAN_NOT_FAVORITE_YOURSELF, exception.getErrorCode());
@@ -91,17 +91,17 @@ class FavoriteServiceTest {
     @DisplayName("즐겨찾기 등록- 실패_상대방 찾을 수 없음")
     public void testRegister_Fail_NOT_FOUND_USER() {
         // given
-        String favoriteName = "favorite";
+        Long favoriteUserId = 5L;
         User user = User.builder()
             .id(1L)
             .name("user")
             .email("user1@example.com")
             .build();
 
-        when(userRepository.findByName(anyString())).thenReturn(Optional.empty());
+        when(userRepository.findById(anyLong())).thenReturn(Optional.empty());
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () -> friendService.register(createMockAuthentication(user), favoriteName));
+            () -> friendService.register(createMockAuthentication(user), favoriteUserId));
 
         // then
         assertEquals(NOT_FOUND_USER, exception.getErrorCode());
@@ -116,22 +116,22 @@ class FavoriteServiceTest {
             .email("user1@example.com")
             .build();
         User favorite = User.builder()
-            .id(1L)
+            .id(5L)
             .name("favorite")
             .email("friend@example.com")
             .build();
         Favorite userFavorite = Favorite.builder()
             .user(user)
-            .favorite(favorite)
+            .favoriteUser(favorite)
             .blocked(false)
             .build();
 
-        when(userRepository.findByName(anyString())).thenReturn(Optional.of(favorite));
-        when(friendshipRepository.findByUserAndFavorite(
+        when(userRepository.findById(anyLong())).thenReturn(Optional.of(favorite));
+        when(friendshipRepository.findByUserAndFavoriteUser(
             any(User.class), any(User.class))).thenReturn(Optional.of(userFavorite));
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () -> friendService.register(createMockAuthentication(user), favorite.getName()));
+            () -> friendService.register(createMockAuthentication(user), 5L));
 
         // then
         assertEquals(ALREADY_REGISTERED_FAVORITE, exception.getErrorCode());
@@ -146,22 +146,22 @@ class FavoriteServiceTest {
             .email("user1@example.com")
             .build();
         User favorite = User.builder()
-            .id(1L)
+            .id(5L)
             .name("favorite")
             .email("friend@example.com")
             .build();
         Favorite userFavorite = Favorite.builder()
             .user(user)
-            .favorite(favorite)
+            .favoriteUser(favorite)
             .blocked(true)
             .build();
 
-        when(userRepository.findByName(anyString())).thenReturn(Optional.of(favorite));
-        when(friendshipRepository.findByUserAndFavorite(
+        when(userRepository.findById(anyLong())).thenReturn(Optional.of(favorite));
+        when(friendshipRepository.findByUserAndFavoriteUser(
             any(User.class), any(User.class))).thenReturn(Optional.of(userFavorite));
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () -> friendService.register(createMockAuthentication(user), favorite.getName()));
+            () -> friendService.register(createMockAuthentication(user), 5L));
 
         // then
         assertEquals(USER_IS_BLOCKED, exception.getErrorCode());
@@ -178,15 +178,15 @@ class FavoriteServiceTest {
             .email("user1@example.com")
             .build();
         User favorite = User.builder()
-            .id(1L)
+            .id(5L)
             .name("favorite")
             .email("friend@example.com")
             .build();
 
-        when(userRepository.findByName(anyString())).thenReturn(Optional.of(favorite));
-        when(friendshipRepository.findByUserAndFavorite(user,favorite)).thenReturn(Optional.empty());
+        when(userRepository.findById(anyLong())).thenReturn(Optional.of(favorite));
+        when(friendshipRepository.findByUserAndFavoriteUser(user,favorite)).thenReturn(Optional.empty());
         // when
-        String result = friendService.block(createMockAuthentication(user), favorite.getName());
+        String result = friendService.block(createMockAuthentication(user), 5L);
 
         // then
         assertEquals("favorite 님을 차단했습니다.", result);
@@ -195,17 +195,17 @@ class FavoriteServiceTest {
     @DisplayName("유저 차단 - 실패_유저 찾을 수 없음")
     public void testBlock_Fail_NOT_FOUND_USER() {
         // given
-        String favoriteName = "favorite";
+        Long favoriteUserId = 5L;
         User user = User.builder()
             .id(1L)
             .name("user")
             .email("user1@example.com")
             .build();
 
-        when(userRepository.findByName(anyString())).thenReturn(Optional.empty());
+        when(userRepository.findById(anyLong())).thenReturn(Optional.empty());
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () -> friendService.block(createMockAuthentication(user), favoriteName));
+            () -> friendService.block(createMockAuthentication(user), favoriteUserId));
 
         // then
         assertEquals(NOT_FOUND_USER, exception.getErrorCode());
@@ -220,22 +220,22 @@ class FavoriteServiceTest {
             .email("user1@example.com")
             .build();
         User favorite = User.builder()
-            .id(1L)
+            .id(5L)
             .name("favorite")
             .email("friend@example.com")
             .build();
         Favorite userFavorite = Favorite.builder()
             .user(user)
-            .favorite(favorite)
+            .favoriteUser(favorite)
             .blocked(true)
             .build();
 
-        when(userRepository.findByName(anyString())).thenReturn(Optional.of(favorite));
-        when(friendshipRepository.findByUserAndFavorite(
+        when(userRepository.findById(anyLong())).thenReturn(Optional.of(favorite));
+        when(friendshipRepository.findByUserAndFavoriteUser(
             any(User.class), any(User.class))).thenReturn(Optional.of(userFavorite));
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () -> friendService.block(createMockAuthentication(user), favorite.getName()));
+            () -> friendService.block(createMockAuthentication(user), 5L));
 
         // then
         assertEquals(USER_IS_BLOCKED, exception.getErrorCode());
@@ -252,21 +252,21 @@ class FavoriteServiceTest {
             .email("user1@example.com")
             .build();
         User favorite = User.builder()
-            .id(1L)
+            .id(5L)
             .name("favorite")
             .email("friend@example.com")
             .build();
         Favorite userFavorite = Favorite.builder()
             .user(user)
-            .favorite(favorite)
+            .favoriteUser(favorite)
             .blocked(true)
             .build();
 
-        when(userRepository.findByName(anyString())).thenReturn(Optional.of(favorite));
-        when(friendshipRepository.findByUserAndFavorite(user,favorite))
+        when(userRepository.findById(anyLong())).thenReturn(Optional.of(favorite));
+        when(friendshipRepository.findByUserAndFavoriteUser(user,favorite))
             .thenReturn(Optional.of(userFavorite));
         // when
-        String result = friendService.unBlock(createMockAuthentication(user), favorite.getName());
+        String result = friendService.unBlock(createMockAuthentication(user), 5L);
 
         // then
         assertEquals("favorite 님을 차단 해제 했습니다.", result);
@@ -275,17 +275,17 @@ class FavoriteServiceTest {
     @DisplayName("유저 차단 해제- 실패_유저 찾을 수 없음")
     public void testUnBlock_Fail_NOT_FOUND_USER() {
         // given
-        String favoriteName = "favorite";
+        Long favoriteUserId = 5L;
         User user = User.builder()
             .id(1L)
             .name("user")
             .email("user1@example.com")
             .build();
 
-        when(userRepository.findByName(anyString())).thenReturn(Optional.empty());
+        when(userRepository.findById(anyLong())).thenReturn(Optional.empty());
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () -> friendService.unBlock(createMockAuthentication(user), favoriteName));
+            () -> friendService.unBlock(createMockAuthentication(user), favoriteUserId));
 
         // then
         assertEquals(NOT_FOUND_USER, exception.getErrorCode());
@@ -300,22 +300,22 @@ class FavoriteServiceTest {
             .email("user1@example.com")
             .build();
         User favorite = User.builder()
-            .id(1L)
+            .id(5L)
             .name("favorite")
             .email("friend@example.com")
             .build();
         Favorite userFavorite = Favorite.builder()
             .user(user)
-            .favorite(favorite)
+            .favoriteUser(favorite)
             .blocked(false)
             .build();
 
-        when(userRepository.findByName(anyString())).thenReturn(Optional.of(favorite));
-        when(friendshipRepository.findByUserAndFavorite(user,favorite))
+        when(userRepository.findById(anyLong())).thenReturn(Optional.of(favorite));
+        when(friendshipRepository.findByUserAndFavoriteUser(user,favorite))
             .thenReturn(Optional.of(userFavorite));
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () ->  friendService.unBlock(createMockAuthentication(user), favorite.getName()));
+            () ->  friendService.unBlock(createMockAuthentication(user), 5L));
 
         // then
         assertEquals(USER_IS_NOT_BLOCKED, exception.getErrorCode());
@@ -330,17 +330,17 @@ class FavoriteServiceTest {
             .email("user1@example.com")
             .build();
         User favorite = User.builder()
-            .id(1L)
+            .id(3L)
             .name("favorite")
             .email("friend@example.com")
             .build();
 
-        when(userRepository.findByName(anyString())).thenReturn(Optional.of(favorite));
-        when(friendshipRepository.findByUserAndFavorite(user,favorite))
+        when(userRepository.findById(anyLong())).thenReturn(Optional.of(favorite));
+        when(friendshipRepository.findByUserAndFavoriteUser(user,favorite))
             .thenReturn(Optional.empty());
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () ->  friendService.unBlock(createMockAuthentication(user), favorite.getName()));
+            () ->  friendService.unBlock(createMockAuthentication(user), 3L));
 
         // then
         assertEquals(USER_IS_NOT_BLOCKED, exception.getErrorCode());
@@ -376,12 +376,12 @@ class FavoriteServiceTest {
         List<Favorite> favoriteList= new ArrayList<>();
         Favorite userFavorite1 = Favorite.builder()
             .user(user)
-            .favorite(favorite1)
+            .favoriteUser(favorite1)
             .blocked(false)
             .build();
         Favorite userFavorite2 = Favorite.builder()
             .user(user)
-            .favorite(favorite2)
+            .favoriteUser(favorite2)
             .blocked(false)
             .build();
         favoriteList.add(userFavorite1);
@@ -423,12 +423,12 @@ class FavoriteServiceTest {
         List<Favorite> blockedList= new ArrayList<>();
         Favorite userFavorite1 = Favorite.builder()
             .user(user)
-            .favorite(favorite1)
+            .favoriteUser(favorite1)
             .blocked(true)
             .build();
         Favorite userFavorite2 = Favorite.builder()
             .user(user)
-            .favorite(favorite2)
+            .favoriteUser(favorite2)
             .blocked(true)
             .build();
         blockedList.add(userFavorite1);

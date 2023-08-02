@@ -31,20 +31,22 @@ public class FavoriteService {
 
     // 즐겨찾기 등록
     @Transactional
-    public String register(Authentication authentication, String favoriteName) {
+    public String register(Authentication authentication, Long userId) {
         User user = getUser(authentication);
-        if (user.getName().equals(favoriteName)) {
+        // 유저 자신을 즐겨찾기에 추가하는 경우
+        if (user.getId().equals(userId)) {
             throw new CustomException(CAN_NOT_FAVORITE_YOURSELF);
         }
-        User favorite = userRepository.findByName(favoriteName)
+        User favoriteUser = userRepository.findById(userId)
             .orElseThrow(() -> new CustomException(NOT_FOUND_USER));
+
         // 유저의 '즐겨찾기 레파지토리'에 관심유저가 있는지 확인
-        Optional<Favorite> optionalUserFavorite =
-            favoriteRepository.findByUserAndFavorite(user, favorite);
-        if (optionalUserFavorite.isPresent()) {
-            Favorite userFavorite = optionalUserFavorite.get();
+        Optional<Favorite> optionalFavoriteOfUser =
+            favoriteRepository.findByUserAndFavoriteUser(user, favoriteUser);
+        if (optionalFavoriteOfUser.isPresent()) {
+            Favorite favoriteOfUser = optionalFavoriteOfUser.get();
             // 차단한 경우
-            if (userFavorite.isBlocked()) {
+            if (favoriteOfUser.isBlocked()) {
                 throw new CustomException(USER_IS_BLOCKED);
             }
             // 이미 등록된 경우
@@ -52,78 +54,79 @@ public class FavoriteService {
         } else {
             favoriteRepository.save(Favorite.builder()
                 .user(user)
-                .favorite(favorite)
+                .favoriteUser(favoriteUser)
                 .blocked(false)
                 .build()
             );
         }
-        return favoriteName + " 님을 즐겨찾기에 추가했습니다.";
+        return favoriteUser.getName() + " 님을 즐겨찾기에 추가했습니다.";
     }
 
     // 즐겨찾기 삭제
     @Transactional
-    public void delete(Authentication authentication, String favoriteName) {
+    public void delete(Authentication authentication, Long userId) {
         User user = getUser(authentication);
-        User favorite = userRepository.findByName(favoriteName)
+        User favoriteUser = userRepository.findById(userId)
             .orElseThrow(() -> new CustomException(NOT_FOUND_USER));
+
         // 유저의 '즐겨찾기 레파지토리'에 관심유저가 있는지 확인
-        Favorite userFavorite = favoriteRepository.findByUserAndFavorite(user,
-                favorite)
+        Favorite favoriteOfUser =
+            favoriteRepository.findByUserAndFavoriteUser(user, favoriteUser)
             .orElseThrow(() -> new CustomException(NOT_REGISTERED_FAVORITE));
         // 차단한 경우
-        if (userFavorite.isBlocked()) {
+        if (favoriteOfUser.isBlocked()) {
             throw new CustomException(USER_IS_BLOCKED);
         } else {
-            favoriteRepository.delete(userFavorite);
+            favoriteRepository.delete(favoriteOfUser);
         }
     }
 
     // 유저 차단
     @Transactional
-    public String block(Authentication authentication, String favoriteName) {
+    public String block(Authentication authentication, Long userId) {
         User user = getUser(authentication);
-        User favorite = userRepository.findByName(favoriteName)
+        User favoriteUser = userRepository.findById(userId)
             .orElseThrow(() -> new CustomException(NOT_FOUND_USER));
 
         // 유저의 '즐겨찾기 레파지토리'에 관심유저가 있는지 확인
-        Optional<Favorite> optionalUserFavorite =
-            favoriteRepository.findByUserAndFavorite(user, favorite);
-        if (optionalUserFavorite.isPresent()) {
-            Favorite userFavorite = optionalUserFavorite.get();
+        Optional<Favorite> optionalFavoriteOfUser =
+            favoriteRepository.findByUserAndFavoriteUser(user, favoriteUser);
+        if (optionalFavoriteOfUser.isPresent()) {
+            Favorite favoriteOfUser = optionalFavoriteOfUser.get();
             // 차단한 경우
-            if (userFavorite.isBlocked()) {
+            if (favoriteOfUser.isBlocked()) {
                 throw new CustomException(USER_IS_BLOCKED);
+            } else {
+                // 즐겨찾기 유저인 경우
+                favoriteOfUser.setBlocked(true);
+                favoriteRepository.save(favoriteOfUser);
             }
+        } else {
+            favoriteRepository.save(Favorite.builder()
+                .user(user)
+                .favoriteUser(favoriteUser)
+                .blocked(true)
+                .build()
+            );
         }
-        favoriteRepository.save(Favorite.builder()
-            .user(user)
-            .favorite(favorite)
-            .blocked(true)
-            .build()
-        );
 
-        return favoriteName + " 님을 차단했습니다.";
+        return favoriteUser.getName() + " 님을 차단했습니다.";
     }
 
-    // 차단 해제 -> 관심 유저도 아닌 아무런 관계가 없는 유저가 된다.
+    // 차단 해제 -> 관심 유저도 아닌 아무런 관계가 없는 유저가 됩니다.
     @Transactional
-    public String unBlock(Authentication authentication, String
-        favoriteName) {
+    public String unBlock(Authentication authentication, Long userId) {
         User user = getUser(authentication);
-        User favorite = userRepository.findByName(favoriteName)
+        User favoriteUser = userRepository.findById(userId)
             .orElseThrow(() -> new CustomException(NOT_FOUND_USER));
 
         // 유저의 '즐겨찾기 레파지토리'에 관심유저가 있는지 확인
-        Optional<Favorite> optionalUserFavorite =
-            favoriteRepository.findByUserAndFavorite(user, favorite);
-        if (optionalUserFavorite.isPresent()) {
-            Favorite userFavorite = optionalUserFavorite.get();
-            if (userFavorite.isBlocked()) {
-                favoriteRepository.delete(userFavorite);
-                return favoriteName + " 님을 차단 해제 했습니다.";
-            } else {
-                throw new CustomException(USER_IS_NOT_BLOCKED);
-            }
+        Favorite favoriteOfUser = favoriteRepository.findByUserAndFavoriteUser(user, favoriteUser)
+                .orElseThrow(() -> new CustomException(USER_IS_NOT_BLOCKED));
+
+        if (favoriteOfUser.isBlocked()) {
+            favoriteRepository.delete(favoriteOfUser);
+            return favoriteUser.getName() + " 님을 차단 해제 했습니다.";
         } else {
             throw new CustomException(USER_IS_NOT_BLOCKED);
         }
@@ -134,7 +137,7 @@ public class FavoriteService {
         User user = getUser(authentication);
         return favoriteRepository.findByUserAndBlocked(user, false)
             .stream()
-            .map(Favorite::getFavorite)
+            .map(Favorite::getFavoriteUser)
             .map(UserInfoDto::from)
             .collect(Collectors.toList());
     }
@@ -144,7 +147,7 @@ public class FavoriteService {
         User user = getUser(authentication);
         return favoriteRepository.findByUserAndBlocked(user, true)
             .stream()
-            .map(Favorite::getFavorite)
+            .map(Favorite::getFavoriteUser)
             .map(UserInfoDto::from)
             .collect(Collectors.toList());
     }

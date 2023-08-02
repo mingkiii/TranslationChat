@@ -10,6 +10,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface FavoriteRepository extends JpaRepository<Favorite, Long> {
 
-    Optional<Favorite> findByUserAndFavorite(User user, User favorite);
-    List<Favorite> findByUserAndBlocked(User user, boolean isBlocked);
+    Optional<Favorite> findByUserAndFavoriteUser(User user, User favoriteUser);
+    List<Favorite> findByUserAndBlocked(User user, boolean blocked);
 }

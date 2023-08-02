@@ -24,25 +24,25 @@ public class FavoriteController {
     // 관심 유저 등록
     @PostMapping("/register")
     public ResponseEntity<String> register(
-        Authentication authentication, @RequestParam String favoriteName
+        Authentication authentication, @RequestParam Long userId
     ) {
-        return ResponseEntity.ok(favoriteService.register(authentication, favoriteName));
+        return ResponseEntity.ok(favoriteService.register(authentication, userId));
     }
 
     // 유저 차단
     @PutMapping("/block")
     public ResponseEntity<String> block(
-        Authentication authentication, @RequestParam String favoriteName
+        Authentication authentication, @RequestParam Long userId
     ) {
-        return ResponseEntity.ok(favoriteService.block(authentication, favoriteName));
+        return ResponseEntity.ok(favoriteService.block(authentication, userId));
     }
 
     // 차단 해제
-    @PutMapping("/unblock")
+    @DeleteMapping("/unblock")
     public ResponseEntity<String> unblock(
-        Authentication authentication, @RequestParam String favoriteName
+        Authentication authentication, @RequestParam Long userId
     ) {
-        return ResponseEntity.ok(favoriteService.unBlock(authentication, favoriteName));
+        return ResponseEntity.ok(favoriteService.unBlock(authentication, userId));
     }
 
     // 즐겨찾기 목록 조회
@@ -59,7 +59,7 @@ public class FavoriteController {
 
     // 관심 유저 삭제
     @DeleteMapping
-    public void delete(Authentication authentication, @RequestParam String favoriteName) {
-        favoriteService.delete(authentication, favoriteName);
+    public void delete(Authentication authentication, @RequestParam Long userId) {
+        favoriteService.delete(authentication, userId);
     }
 }

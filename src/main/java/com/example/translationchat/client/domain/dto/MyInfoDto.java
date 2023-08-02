@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class MyInfoDto {
 
+    private Long id;
     private String email;
     private String name;
     private Nationality nationality;
@@ -21,6 +22,7 @@ public class MyInfoDto {
 
     public static MyInfoDto from(User user) {
         return MyInfoDto.builder()
+            .id(user.getId())
             .email(user.getEmail())
             .name(user.getName())
             .nationality(user.getNationality())

@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class UserInfoDto {
 
+    private Long id;
     private String name;
     private Nationality nationality;
     private String language;
@@ -20,6 +21,7 @@ public class UserInfoDto {
 
     public static UserInfoDto from(User user) {
         return UserInfoDto.builder()
+            .id(user.getId())
             .name(user.getName())
             .nationality(user.getNationality())
             .language(user.getLanguage().getDisplayName())

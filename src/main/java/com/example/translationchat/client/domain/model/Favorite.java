@@ -33,9 +33,9 @@ public class Favorite extends BaseEntity{
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "favorite_id")
-    private User favorite;
+    @JoinColumn(name = "favorite_user_id")
+    private User favoriteUser;
 
-    @Column(columnDefinition = "boolean default false")
+    @Column
     private boolean blocked;
 }

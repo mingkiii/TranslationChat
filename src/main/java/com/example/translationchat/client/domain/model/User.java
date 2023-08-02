@@ -64,7 +64,7 @@ public class User extends BaseEntity{
     @JoinTable(
         name = "favorite",
         joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "favorite_id")
+        inverseJoinColumns = @JoinColumn(name = "favorite_user_id")
     )
     @Builder.Default
     private List<User> favoriteList = new ArrayList<>();
