@@ -1,6 +1,7 @@
 package com.example.translationchat.chat.service;
 
 import static com.example.translationchat.common.exception.ErrorCode.OFFLINE_USER;
+import static com.example.translationchat.common.exception.ErrorCode.USER_IS_BLOCKED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -9,7 +10,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.example.translationchat.client.domain.form.NotificationForm;
+import com.example.translationchat.client.domain.model.Favorite;
 import com.example.translationchat.client.domain.model.User;
+import com.example.translationchat.client.domain.repository.FavoriteRepository;
 import com.example.translationchat.client.domain.repository.UserRepository;
 import com.example.translationchat.client.domain.type.ActiveStatus;
 import com.example.translationchat.client.service.NotificationService;
@@ -32,6 +35,9 @@ class ChatRoomUserServiceTest {
 
     @Mock
     private NotificationService notificationService;
+
+    @Mock
+    private FavoriteRepository favoriteRepository;
 
     @InjectMocks
     private ChatRoomUserService chatRoomUserService;
@@ -81,6 +87,66 @@ class ChatRoomUserServiceTest {
         // when
         CustomException exception = assertThrows(CustomException.class,
             () -> chatRoomUserService.request(createMockAuthentication(sender), 2L));
+        //then
+        assertEquals(OFFLINE_USER, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("대화 요청 - 실패_유저가 상대를 차단한 상태")
+    void testRequest_Fail_USER_IS_BLOCKED() {
+        //given
+        User user = User.builder()
+            .id(1L)
+            .name("sender")
+            .status(ActiveStatus.ONLINE)
+            .build();
+        User receiver = User.builder()
+            .id(2L)
+            .name("receiver")
+            .status(ActiveStatus.OFFLINE)
+            .build();
+        Favorite userFavorite = Favorite.builder()
+            .user(user)
+            .favoriteUser(receiver)
+            .blocked(true)
+            .build();
+
+        when(userRepository.findById(2L)).thenReturn(Optional.of(receiver));
+        when(favoriteRepository.findByUserAndFavoriteUser(user, receiver))
+            .thenReturn(Optional.of(userFavorite));
+        // when
+        CustomException exception = assertThrows(CustomException.class,
+            () -> chatRoomUserService.request(createMockAuthentication(user), 2L));
+        //then
+        assertEquals(USER_IS_BLOCKED, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("대화 요청 - 실패_유저가 차단 당한 상태")
+    void testRequest_Fail_FAKE_OFFLINE_USER() {
+        //given
+        User user = User.builder()
+            .id(1L)
+            .name("sender")
+            .status(ActiveStatus.ONLINE)
+            .build();
+        User receiver = User.builder()
+            .id(2L)
+            .name("receiver")
+            .status(ActiveStatus.OFFLINE)
+            .build();
+        Favorite favorite = Favorite.builder()
+            .user(receiver)
+            .favoriteUser(user)
+            .blocked(true)
+            .build();
+
+        when(userRepository.findById(2L)).thenReturn(Optional.of(receiver));
+        when(favoriteRepository.findByUserAndFavoriteUser(receiver, user))
+            .thenReturn(Optional.of(favorite));
+        // when
+        CustomException exception = assertThrows(CustomException.class,
+            () -> chatRoomUserService.request(createMockAuthentication(user), 2L));
         //then
         assertEquals(OFFLINE_USER, exception.getErrorCode());
     }
