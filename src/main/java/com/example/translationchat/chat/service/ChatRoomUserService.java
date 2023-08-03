@@ -14,7 +14,6 @@ import com.example.translationchat.client.domain.type.ContentType;
 import com.example.translationchat.client.service.NotificationService;
 import com.example.translationchat.common.exception.CustomException;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -34,41 +33,31 @@ public class ChatRoomUserService {
             .orElseThrow(() -> new CustomException(NOT_FOUND_USER));
 
         // 유저가 차단한 유저인지 확인 -> 차단한 경우 요청되지 않음
-        Optional<Favorite> optionalFavoriteOfUser =
-            favoriteRepository.findByUserAndFavoriteUser(user, receiver);
-        if (optionalFavoriteOfUser.isPresent()) {
-            Favorite favoriteUser = optionalFavoriteOfUser.get();
-            if (favoriteUser.isBlocked()) {
-                throw new CustomException(USER_IS_BLOCKED);
-            }
+        if (favoriteRepository.findByUserAndFavoriteUser(user, receiver)
+                .map(Favorite::isBlocked).orElse(false)) {
+            throw new CustomException(USER_IS_BLOCKED);
         }
 
         // 상대가 유저를 차단한 상태인지 확인
         // 차단 당한 상태일 경우 - 오프라인 상태 예외발생으로 요청 되지 않도록 함.
-        Optional<Favorite> optionalFavoriteOfReceiver =
-            favoriteRepository.findByUserAndFavoriteUser(receiver, user);
-        if (optionalFavoriteOfReceiver.isPresent()) {
-            Favorite favoriteReceiver = optionalFavoriteOfReceiver.get();
-            if (favoriteReceiver.isBlocked()) {
-                throw new CustomException(OFFLINE_USER);
-            }
-        }
-
-        if (ActiveStatus.ONLINE.equals(receiver.getStatus())) {
-            // 요청받는 유저에게 알림 생성
-            String message = String.format("%s 님이 %s 님에게 %s",
-                user.getName(), receiver.getName(),
-                ContentType.REQUEST_CHAT.getDisplayName());
-
-            notificationService.create
-                (NotificationForm.builder()
-                        .user(receiver)
-                        .args(user.getId())
-                        .contentType(ContentType.REQUEST_CHAT)
-                        .build(), message);
-        } else {
+        if (favoriteRepository.findByUserAndFavoriteUser(receiver, user)
+                .map(Favorite::isBlocked).orElse(false)) {
             throw new CustomException(OFFLINE_USER);
         }
+
+        if (ActiveStatus.ONLINE != receiver.getStatus()) {
+            throw new CustomException(OFFLINE_USER);
+        }
+        // 요청받는 유저에게 알림 생성
+        String message = String.format("%s 님이 %s 님에게 %s",
+            user.getName(), receiver.getName(),
+            ContentType.REQUEST_CHAT.getDisplayName());
+
+        notificationService.create(NotificationForm.builder()
+                                    .user(receiver)
+                                    .args(user.getId())
+                                    .contentType(ContentType.REQUEST_CHAT)
+                                    .build(), message);
     }
 
     private User getUser(Authentication authentication) {

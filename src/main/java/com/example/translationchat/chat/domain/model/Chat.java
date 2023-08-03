@@ -5,6 +5,8 @@ import com.example.translationchat.client.domain.type.Language;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDateTime;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -39,6 +41,7 @@ public class Chat {
 
     private String message;
 
+    @Enumerated(EnumType.STRING)
     private Language language;
 
     @CreatedDate
