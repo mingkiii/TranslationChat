@@ -17,7 +17,7 @@ import lombok.Setter;
 public class NotificationForm {
     @NotNull
     private User user;
-    private String args;
+    private Long args;
     @NotNull
     private ContentType contentType;
 }

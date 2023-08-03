@@ -6,7 +6,6 @@ import com.example.translationchat.client.domain.type.ActiveStatus;
 import com.example.translationchat.client.domain.type.Language;
 import com.example.translationchat.client.domain.type.Nationality;
 import com.example.translationchat.common.model.BaseEntity;
-import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -64,7 +63,7 @@ public class User extends BaseEntity{
     private List<Favorite> favoriteList;
 
     @OneToMany(mappedBy = "user")
-    private List<ChatRoomUser> chatRoomUsers = new ArrayList<>();
+    private List<ChatRoomUser> chatRoomUsers;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Chat> chat;
