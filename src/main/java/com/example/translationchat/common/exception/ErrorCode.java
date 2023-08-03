@@ -22,6 +22,8 @@ public enum ErrorCode {
     USER_IS_BLOCKED(HttpStatus.BAD_REQUEST, "차단된 유저입니다."),
     USER_IS_NOT_BLOCKED(HttpStatus.BAD_REQUEST, "차단된 유저가 아닙니다."),
 
+    OFFLINE_USER(HttpStatus.BAD_REQUEST, "유저가 오프라인 상태입니다."),
+
     NOT_FOUND_NOTIFICATION(HttpStatus.BAD_REQUEST, "해당 알림이 존재하지 않습니다."),
 
     LOCK_FAILED(HttpStatus.BAD_REQUEST, "이메일 또는 이름이 이미 사용중입니다."),

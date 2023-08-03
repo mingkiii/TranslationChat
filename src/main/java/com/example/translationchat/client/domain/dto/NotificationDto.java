@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class NotificationDto {
     private Long id;
-    private String args;
+    private Long args;
     private String content;
     private LocalDateTime createdAt;
 

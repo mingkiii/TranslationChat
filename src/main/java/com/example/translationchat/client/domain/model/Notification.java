@@ -35,7 +35,7 @@ public class Notification extends BaseEntity{
     private User user;
 
     @Column
-    private String args;
+    private Long args;
 
     @Column
     @Enumerated(EnumType.STRING)
