@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.example.translationchat.chat.domain.repository.ChatRoomRepository;
 import com.example.translationchat.client.domain.form.NotificationForm;
 import com.example.translationchat.client.domain.model.Favorite;
 import com.example.translationchat.client.domain.model.User;
@@ -39,6 +40,9 @@ class ChatRoomUserServiceTest {
     @Mock
     private FavoriteRepository favoriteRepository;
 
+    @Mock
+    private ChatRoomRepository chatRoomRepository;
+
     @InjectMocks
     private ChatRoomUserService chatRoomUserService;
 
@@ -59,6 +63,8 @@ class ChatRoomUserServiceTest {
             .build();
 
         when(userRepository.findById(2L)).thenReturn(Optional.of(receiver));
+        when(chatRoomRepository.existsByChatRoomUsersUserAndChatRoomUsersUser(any(User.class), any(User.class)))
+            .thenReturn(false);
 
         // when
         chatRoomUserService.request(createMockAuthentication(sender), 2L);

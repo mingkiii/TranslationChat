@@ -23,8 +23,13 @@ public enum ErrorCode {
     USER_IS_NOT_BLOCKED(HttpStatus.BAD_REQUEST, "차단된 유저가 아닙니다."),
 
     OFFLINE_USER(HttpStatus.BAD_REQUEST, "유저가 오프라인 상태입니다."),
+    ALREADY_EXISTS_ROOM(HttpStatus.BAD_REQUEST, "이미 유저와의 대화방이 있습니다."),
 
     NOT_FOUND_NOTIFICATION(HttpStatus.BAD_REQUEST, "해당 알림이 존재하지 않습니다."),
+
+    NOT_EXIST_CLIENT(HttpStatus.BAD_REQUEST, "해당 채팅방에 클라이언트가 없습니다."),
+    CHAT_ERROR(HttpStatus.BAD_REQUEST, "메세지가 올바르지 않습니다."),
+    NOT_FOUND_ROOM(HttpStatus.BAD_REQUEST, "대화방을 찾을 수 없습니다."),
 
     LOCK_FAILED(HttpStatus.BAD_REQUEST, "이메일 또는 이름이 이미 사용중입니다."),
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "올바른 입력값이 아닙니다.");

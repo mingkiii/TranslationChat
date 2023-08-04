@@ -1,9 +1,12 @@
 package com.example.translationchat.chat.service;
 
+import static com.example.translationchat.common.exception.ErrorCode.ALREADY_EXISTS_ROOM;
 import static com.example.translationchat.common.exception.ErrorCode.NOT_FOUND_USER;
 import static com.example.translationchat.common.exception.ErrorCode.OFFLINE_USER;
 import static com.example.translationchat.common.exception.ErrorCode.USER_IS_BLOCKED;
 
+import com.example.translationchat.chat.domain.repository.ChatRoomRepository;
+import com.example.translationchat.client.domain.dto.NotificationDto;
 import com.example.translationchat.client.domain.form.NotificationForm;
 import com.example.translationchat.client.domain.model.Favorite;
 import com.example.translationchat.client.domain.model.User;
@@ -25,6 +28,7 @@ public class ChatRoomUserService {
     private final UserRepository userRepository;
     private final FavoriteRepository favoriteRepository;
     private final NotificationService notificationService;
+    private final ChatRoomRepository roomRepository;
 
     // 대화 요청
     public void request(Authentication authentication, Long receiverUserId) {
@@ -48,6 +52,13 @@ public class ChatRoomUserService {
         if (ActiveStatus.ONLINE != receiver.getStatus()) {
             throw new CustomException(OFFLINE_USER);
         }
+
+        // 이미 대화방이 있는지 확인
+        if (roomRepository.existsByChatRoomUsersUserAndChatRoomUsersUser(user, receiver) ||
+            roomRepository.existsByChatRoomUsersUserAndChatRoomUsersUser(receiver, user)) {
+            throw new CustomException(ALREADY_EXISTS_ROOM);
+        }
+
         // 요청받는 유저에게 알림 생성
         String message = String.format("%s 님이 %s 님에게 %s",
             user.getName(), receiver.getName(),
@@ -58,6 +69,27 @@ public class ChatRoomUserService {
                                     .args(user.getId())
                                     .contentType(ContentType.REQUEST_CHAT)
                                     .build(), message);
+    }
+
+    // 대화 요청 거절
+    public void refuse(Authentication authentication, NotificationDto notificationDto) {
+        User user = getUser(authentication);
+        User requester = userRepository.findById(notificationDto.getArgs())
+            .orElseThrow(() -> new CustomException(NOT_FOUND_USER));
+
+        String message = String.format("%s 님이 %s 님의 %s",
+            user.getName(), requester.getName(),
+            ContentType.REFUSE_REQUEST_CHAT.getDisplayName());
+
+        // 요청자에게 요청 거절 알림 생성
+        notificationService.create(NotificationForm.builder()
+            .user(requester)
+            .args(user.getId())
+            .contentType(ContentType.REFUSE_REQUEST_CHAT)
+            .build(), message);
+
+        // 대화 요청 알림 삭제
+        notificationService.delete(notificationDto.getId());
     }
 
     private User getUser(Authentication authentication) {

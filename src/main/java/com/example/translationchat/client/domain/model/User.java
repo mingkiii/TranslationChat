@@ -1,6 +1,6 @@
 package com.example.translationchat.client.domain.model;
 
-import com.example.translationchat.chat.domain.model.Chat;
+import com.example.translationchat.chat.domain.model.ChatMessage;
 import com.example.translationchat.chat.domain.model.ChatRoomUser;
 import com.example.translationchat.client.domain.type.ActiveStatus;
 import com.example.translationchat.client.domain.type.Language;
@@ -66,5 +66,5 @@ public class User extends BaseEntity{
     private List<ChatRoomUser> chatRoomUsers;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Chat> chat;
+    private List<ChatMessage> chat;
 }
