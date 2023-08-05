@@ -72,7 +72,8 @@ public class ChatRoomUserService {
     }
 
     // 대화 요청 거절
-    public void refuse(NotificationDto notificationDto) {
+    public void refuse(Long notificationId) {
+        NotificationDto notificationDto = notificationService.getNotificationDto(notificationId);
         User user = notificationDto.getUser();
         User requester = userRepository.findById(notificationDto.getArgs())
             .orElseThrow(() -> new CustomException(NOT_FOUND_USER));
@@ -89,7 +90,7 @@ public class ChatRoomUserService {
             .build(), message);
 
         // 대화 요청 알림 삭제
-        notificationService.delete(notificationDto.getId());
+        notificationService.delete(notificationId);
     }
 
     private User getUser(Authentication authentication) {

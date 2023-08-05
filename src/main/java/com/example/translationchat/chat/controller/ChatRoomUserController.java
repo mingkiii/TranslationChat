@@ -1,7 +1,6 @@
 package com.example.translationchat.chat.controller;
 
 import com.example.translationchat.chat.service.ChatRoomUserService;
-import com.example.translationchat.client.domain.dto.NotificationDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -23,8 +22,8 @@ public class ChatRoomUserController {
     }
 
     @DeleteMapping
-    public void refuse(NotificationDto notificationDto) {
-        chatRoomUserService.refuse(notificationDto);
+    public void refuse(@RequestParam Long notificationId) {
+        chatRoomUserService.refuse(notificationId);
     }
 }
 

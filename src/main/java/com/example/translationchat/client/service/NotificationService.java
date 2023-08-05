@@ -1,10 +1,13 @@
 package com.example.translationchat.client.service;
 
+import static com.example.translationchat.common.exception.ErrorCode.NOT_FOUND_NOTIFICATION;
+
 import com.example.translationchat.client.domain.dto.NotificationDto;
 import com.example.translationchat.client.domain.form.NotificationForm;
 import com.example.translationchat.client.domain.model.Notification;
 import com.example.translationchat.client.domain.model.User;
 import com.example.translationchat.client.domain.repository.NotificationRepository;
+import com.example.translationchat.common.exception.CustomException;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
 import com.example.translationchat.server.handler.EchoHandler;
 import java.io.IOException;
@@ -55,6 +58,12 @@ public class NotificationService {
     public void delete(Long id) {
         notificationRepository.findById(id)
             .ifPresent(notificationRepository::delete);
+    }
+
+    public NotificationDto getNotificationDto(Long id) {
+        return notificationRepository.findById(id)
+            .map(NotificationDto::from)
+            .orElseThrow(() -> new CustomException(NOT_FOUND_NOTIFICATION));
     }
 
     // 알림 목록 조회 - 페이징 처리
