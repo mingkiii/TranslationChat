@@ -23,6 +23,8 @@ public enum ErrorCode {
     USER_IS_NOT_BLOCKED(HttpStatus.BAD_REQUEST, "차단된 유저가 아닙니다."),
 
     OFFLINE_USER(HttpStatus.BAD_REQUEST, "유저가 오프라인 상태입니다."),
+    ALREADY_REQUEST_RECEIVER(HttpStatus.BAD_REQUEST, "상대방이 이미 유저에게 대화 요청을 하였습니다."),
+    ALREADY_REQUEST(HttpStatus.BAD_REQUEST, "이미 상대방에게 대화 요청을 하였습니다."),
     ALREADY_EXISTS_ROOM(HttpStatus.BAD_REQUEST, "이미 유저와의 대화방이 있습니다."),
 
     NOT_FOUND_NOTIFICATION(HttpStatus.BAD_REQUEST, "해당 알림이 존재하지 않습니다."),

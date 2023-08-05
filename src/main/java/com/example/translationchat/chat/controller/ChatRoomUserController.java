@@ -17,8 +17,8 @@ public class ChatRoomUserController {
     private final ChatRoomUserService chatRoomUserService;
 
     @PostMapping("/request")
-    public void request(Authentication authentication, @RequestParam Long receiverUerId) {
-        chatRoomUserService.request(authentication, receiverUerId);
+    public void request(Authentication authentication, @RequestParam("id") Long receiverUserId) {
+        chatRoomUserService.request(authentication, receiverUserId);
     }
 
     // 대화 요청 알림을 통해 거절할 경우 - 해당 알림 삭제, 요청자에게 거절 알림 생성

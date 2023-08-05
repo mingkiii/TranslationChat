@@ -1,5 +1,8 @@
 package com.example.translationchat.chat.service;
 
+import static com.example.translationchat.common.exception.ErrorCode.ALREADY_EXISTS_ROOM;
+import static com.example.translationchat.common.exception.ErrorCode.ALREADY_REQUEST;
+import static com.example.translationchat.common.exception.ErrorCode.ALREADY_REQUEST_RECEIVER;
 import static com.example.translationchat.common.exception.ErrorCode.OFFLINE_USER;
 import static com.example.translationchat.common.exception.ErrorCode.USER_IS_BLOCKED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,6 +19,7 @@ import com.example.translationchat.client.domain.model.User;
 import com.example.translationchat.client.domain.repository.FavoriteRepository;
 import com.example.translationchat.client.domain.repository.UserRepository;
 import com.example.translationchat.client.domain.type.ActiveStatus;
+import com.example.translationchat.client.domain.type.ContentType;
 import com.example.translationchat.client.service.NotificationService;
 import com.example.translationchat.common.exception.CustomException;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
@@ -63,6 +67,10 @@ class ChatRoomUserServiceTest {
             .build();
 
         when(userRepository.findById(2L)).thenReturn(Optional.of(receiver));
+        when(notificationService.existsNotification(receiver, 1L, ContentType.REQUEST_CHAT))
+            .thenReturn(false);
+        when(notificationService.existsNotification(sender, 2L, ContentType.REQUEST_CHAT))
+            .thenReturn(false);
         when(chatRoomRepository.existsByChatRoomUsersUserAndChatRoomUsersUser(any(User.class), any(User.class)))
             .thenReturn(false);
 
@@ -109,7 +117,7 @@ class ChatRoomUserServiceTest {
         User receiver = User.builder()
             .id(2L)
             .name("receiver")
-            .status(ActiveStatus.OFFLINE)
+            .status(ActiveStatus.ONLINE)
             .build();
         Favorite userFavorite = Favorite.builder()
             .user(user)
@@ -139,7 +147,7 @@ class ChatRoomUserServiceTest {
         User receiver = User.builder()
             .id(2L)
             .name("receiver")
-            .status(ActiveStatus.OFFLINE)
+            .status(ActiveStatus.ONLINE)
             .build();
         Favorite favorite = Favorite.builder()
             .user(receiver)
@@ -155,6 +163,90 @@ class ChatRoomUserServiceTest {
             () -> chatRoomUserService.request(createMockAuthentication(user), 2L));
         //then
         assertEquals(OFFLINE_USER, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("대화 요청 - 실패_요청받는 유저가 이미 요청자에게 요청한 경우")
+    public void testRequest_Fail_ALREADY_REQUEST_RECEIVER() {
+        // given
+        User sender = User.builder()
+            .id(1L)
+            .name("sender")
+            .status(ActiveStatus.ONLINE)
+            .build();
+
+        User receiver = User.builder()
+            .id(2L)
+            .name("receiver")
+            .status(ActiveStatus.ONLINE)
+            .build();
+
+        when(userRepository.findById(2L)).thenReturn(Optional.of(receiver));
+        when(notificationService.existsNotification(receiver, 1L, ContentType.REQUEST_CHAT))
+            .thenReturn(true);
+
+        // when
+        CustomException exception = assertThrows(CustomException.class,
+            () -> chatRoomUserService.request(createMockAuthentication(sender), 2L));
+        //then
+        assertEquals(ALREADY_REQUEST_RECEIVER, exception.getErrorCode());
+    }
+    @Test
+    @DisplayName("대화 요청 - 실패_유저가 이미 요청자에게 요청한 경우")
+    public void testRequest_Fail_ALREADY_REQUEST() {
+        // given
+        User sender = User.builder()
+            .id(1L)
+            .name("sender")
+            .status(ActiveStatus.ONLINE)
+            .build();
+
+        User receiver = User.builder()
+            .id(2L)
+            .name("receiver")
+            .status(ActiveStatus.ONLINE)
+            .build();
+
+        when(userRepository.findById(2L)).thenReturn(Optional.of(receiver));
+        when(notificationService.existsNotification(sender, 2L, ContentType.REQUEST_CHAT))
+            .thenReturn(true);
+
+        // when
+        CustomException exception = assertThrows(CustomException.class,
+            () -> chatRoomUserService.request(createMockAuthentication(sender), 2L));
+        //then
+        assertEquals(ALREADY_REQUEST, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("대화 요청 - 실패_이미 대화방이 있는 경우")
+    public void testRequest_Fail_ALREADY_EXISTS_ROOM() {
+        // given
+        User sender = User.builder()
+            .id(1L)
+            .name("sender")
+            .status(ActiveStatus.ONLINE)
+            .build();
+
+        User receiver = User.builder()
+            .id(2L)
+            .name("receiver")
+            .status(ActiveStatus.ONLINE)
+            .build();
+
+        when(userRepository.findById(2L)).thenReturn(Optional.of(receiver));
+        when(notificationService.existsNotification(receiver, 1L, ContentType.REQUEST_CHAT))
+            .thenReturn(false);
+        when(notificationService.existsNotification(sender, 2L, ContentType.REQUEST_CHAT))
+            .thenReturn(false);
+        when(chatRoomRepository.existsByChatRoomUsersUserAndChatRoomUsersUser(any(User.class), any(User.class)))
+            .thenReturn(true);
+
+        // when
+        CustomException exception = assertThrows(CustomException.class,
+            () -> chatRoomUserService.request(createMockAuthentication(sender), 2L));
+        //then
+        assertEquals(ALREADY_EXISTS_ROOM, exception.getErrorCode());
     }
 
     private Authentication createMockAuthentication(User user) {

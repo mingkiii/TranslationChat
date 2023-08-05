@@ -7,6 +7,7 @@ import com.example.translationchat.client.domain.form.NotificationForm;
 import com.example.translationchat.client.domain.model.Notification;
 import com.example.translationchat.client.domain.model.User;
 import com.example.translationchat.client.domain.repository.NotificationRepository;
+import com.example.translationchat.client.domain.type.ContentType;
 import com.example.translationchat.common.exception.CustomException;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
 import com.example.translationchat.server.handler.EchoHandler;
@@ -58,6 +59,10 @@ public class NotificationService {
     public void delete(Long id) {
         notificationRepository.findById(id)
             .ifPresent(notificationRepository::delete);
+    }
+
+    public boolean existsNotification(User user, Long userId, ContentType contentType) {
+        return notificationRepository.existsByUserAndArgsAndContent(user, userId, contentType);
     }
 
     public NotificationDto getNotificationDto(Long id) {
