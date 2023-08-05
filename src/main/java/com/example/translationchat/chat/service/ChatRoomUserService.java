@@ -72,8 +72,8 @@ public class ChatRoomUserService {
     }
 
     // 대화 요청 거절
-    public void refuse(Authentication authentication, NotificationDto notificationDto) {
-        User user = getUser(authentication);
+    public void refuse(NotificationDto notificationDto) {
+        User user = notificationDto.getUser();
         User requester = userRepository.findById(notificationDto.getArgs())
             .orElseThrow(() -> new CustomException(NOT_FOUND_USER));
 

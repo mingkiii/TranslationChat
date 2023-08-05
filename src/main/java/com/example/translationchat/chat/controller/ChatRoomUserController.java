@@ -23,8 +23,8 @@ public class ChatRoomUserController {
     }
 
     @DeleteMapping
-    public void refuse(Authentication authentication, NotificationDto notificationDto) {
-        chatRoomUserService.refuse(authentication, notificationDto);
+    public void refuse(NotificationDto notificationDto) {
+        chatRoomUserService.refuse(notificationDto);
     }
 }
 
