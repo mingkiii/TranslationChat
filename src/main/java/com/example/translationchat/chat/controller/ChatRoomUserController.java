@@ -21,6 +21,7 @@ public class ChatRoomUserController {
         chatRoomUserService.request(authentication, receiverUerId);
     }
 
+    // 대화 요청 알림을 통해 거절할 경우 - 해당 알림 삭제, 요청자에게 거절 알림 생성
     @DeleteMapping
     public void refuse(@RequestParam Long notificationId) {
         chatRoomUserService.refuse(notificationId);

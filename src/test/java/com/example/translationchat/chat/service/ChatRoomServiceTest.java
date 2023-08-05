@@ -1,6 +1,7 @@
 package com.example.translationchat.chat.service;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -14,6 +15,7 @@ import com.example.translationchat.client.domain.dto.NotificationDto;
 import com.example.translationchat.client.domain.model.User;
 import com.example.translationchat.client.domain.repository.UserRepository;
 import com.example.translationchat.client.domain.type.ActiveStatus;
+import com.example.translationchat.client.service.NotificationService;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -34,6 +36,9 @@ class ChatRoomServiceTest {
 
     @Mock
     private ChatRoomUserRepository chatRoomUserRepository;
+
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private ChatRoomService chatRoomService;
@@ -66,16 +71,17 @@ class ChatRoomServiceTest {
             .user(user1)
             .args(user2.getId())
             .build();
+        when(notificationService.getNotificationDto(anyLong())).thenReturn(notificationDto);
         // when
-        chatRoomService.create(notificationDto);
+        chatRoomService.create(10L);
 
         // 대화방 생성에 대한 검증
         verify(roomRepository, times(1)).save(any(ChatRoom.class));
 
-        // chatRoomUserRepository의 save 메서드가 두 번 호출되는지 검증
+        // chatRoomUserRepository 의 save 메서드가 두 번 호출되는지 검증
         verify(chatRoomUserRepository, times(2)).save(any(ChatRoomUser.class));
 
-        // kafkaTemplate의 send 메서드가 호출되는지 검증
+        // kafkaTemplate 의 send 메서드가 호출되는지 검증
         verify(kafkaTemplate, times(1)).send(anyString(), anyString());
     }
 }
