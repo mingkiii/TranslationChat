@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/chat")
+@RequestMapping("/v1/chat")
 @RequiredArgsConstructor
 public class ChatRoomUserController {
 
@@ -23,7 +23,7 @@ public class ChatRoomUserController {
 
     // 대화 요청 알림을 통해 거절할 경우 - 해당 알림 삭제, 요청자에게 거절 알림 생성
     @DeleteMapping
-    public void refuse(@RequestParam Long notificationId) {
+    public void refuse(@RequestParam("id") Long notificationId) {
         chatRoomUserService.refuse(notificationId);
     }
 }

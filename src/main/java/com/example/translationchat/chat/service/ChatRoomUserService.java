@@ -7,7 +7,7 @@ import static com.example.translationchat.common.exception.ErrorCode.NOT_FOUND_U
 import static com.example.translationchat.common.exception.ErrorCode.OFFLINE_USER;
 import static com.example.translationchat.common.exception.ErrorCode.USER_IS_BLOCKED;
 
-import com.example.translationchat.chat.domain.repository.ChatRoomRepository;
+import com.example.translationchat.chat.domain.repository.ChatRoomUserRepository;
 import com.example.translationchat.client.domain.dto.NotificationDto;
 import com.example.translationchat.client.domain.form.NotificationForm;
 import com.example.translationchat.client.domain.model.Favorite;
@@ -30,8 +30,7 @@ public class ChatRoomUserService {
     private final UserRepository userRepository;
     private final FavoriteRepository favoriteRepository;
     private final NotificationService notificationService;
-    private final ChatRoomRepository roomRepository;
-
+    private final ChatRoomUserRepository chatRoomUserRepository;
     // 대화 요청
     public void request(Authentication authentication, Long receiverUserId) {
         User user = getUser(authentication);
@@ -67,8 +66,7 @@ public class ChatRoomUserService {
         }
 
         // 이미 대화방이 있는지 확인
-        if (roomRepository.existsByChatRoomUsersUserAndChatRoomUsersUser(user, receiver) ||
-            roomRepository.existsByChatRoomUsersUserAndChatRoomUsersUser(receiver, user)) {
+        if (chatRoomUserRepository.existsByUser(user, receiver)) {
             throw new CustomException(ALREADY_EXISTS_ROOM);
         }
 

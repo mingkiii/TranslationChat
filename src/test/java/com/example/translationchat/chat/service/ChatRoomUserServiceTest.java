@@ -12,7 +12,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.example.translationchat.chat.domain.repository.ChatRoomRepository;
+import com.example.translationchat.chat.domain.repository.ChatRoomUserRepository;
 import com.example.translationchat.client.domain.form.NotificationForm;
 import com.example.translationchat.client.domain.model.Favorite;
 import com.example.translationchat.client.domain.model.User;
@@ -45,7 +45,7 @@ class ChatRoomUserServiceTest {
     private FavoriteRepository favoriteRepository;
 
     @Mock
-    private ChatRoomRepository chatRoomRepository;
+    private ChatRoomUserRepository chatRoomUserRepository;
 
     @InjectMocks
     private ChatRoomUserService chatRoomUserService;
@@ -71,7 +71,7 @@ class ChatRoomUserServiceTest {
             .thenReturn(false);
         when(notificationService.existsNotification(sender, 2L, ContentType.REQUEST_CHAT))
             .thenReturn(false);
-        when(chatRoomRepository.existsByChatRoomUsersUserAndChatRoomUsersUser(any(User.class), any(User.class)))
+        when(chatRoomUserRepository.existsByUser(any(User.class), any(User.class)))
             .thenReturn(false);
 
         // when
@@ -239,7 +239,7 @@ class ChatRoomUserServiceTest {
             .thenReturn(false);
         when(notificationService.existsNotification(sender, 2L, ContentType.REQUEST_CHAT))
             .thenReturn(false);
-        when(chatRoomRepository.existsByChatRoomUsersUserAndChatRoomUsersUser(any(User.class), any(User.class)))
+        when(chatRoomUserRepository.existsByUser(any(User.class), any(User.class)))
             .thenReturn(true);
 
         // when

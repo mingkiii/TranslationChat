@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/chat")
+@RequestMapping("/v1/chat")
 @RequiredArgsConstructor
 public class ChatRoomController {
 
@@ -16,7 +16,7 @@ public class ChatRoomController {
 
     // 대화 요청 알림을 통해 수락할 경우 -> 대화방 생성, 해당 알림 삭제
     @PostMapping("/room")
-    public void create(@RequestParam Long notificationId) {
+    public void create(@RequestParam("id") Long notificationId) {
         roomService.create(notificationId);
     }
 }

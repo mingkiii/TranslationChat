@@ -41,7 +41,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             .authorizeRequests()
             .antMatchers("/user/signup", "/user/login").permitAll()
             // 회원 가입 및 로그인은 모든 사용자 접근 가능
-            .anyRequest().authenticated()
+            .antMatchers("/v1/**").authenticated()
             // 인증된 사용자만 접근 가능
             .and()
             .addFilterBefore(new JwtAuthorizationFilter(provider),
