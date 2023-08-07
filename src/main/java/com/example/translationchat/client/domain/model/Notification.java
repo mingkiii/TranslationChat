@@ -38,6 +38,9 @@ public class Notification extends BaseEntity{
     private Long args;
 
     @Column
+    private Long roomId;
+
+    @Column
     @Enumerated(EnumType.STRING)
     private ContentType content;
 }

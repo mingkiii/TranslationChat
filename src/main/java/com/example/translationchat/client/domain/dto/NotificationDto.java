@@ -1,6 +1,7 @@
 package com.example.translationchat.client.domain.dto;
 
 import com.example.translationchat.client.domain.model.Notification;
+import com.example.translationchat.client.domain.model.User;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,14 +14,18 @@ import lombok.NoArgsConstructor;
 @Builder
 public class NotificationDto {
     private Long id;
+    private User user;
     private Long args;
+    private Long roomId;
     private String content;
     private LocalDateTime createdAt;
 
     public static NotificationDto from(Notification notification) {
         return NotificationDto.builder()
             .id(notification.getId())
+            .user(notification.getUser())
             .args(notification.getArgs())
+            .roomId(notification.getRoomId())
             .content(notification.getContent().getDisplayName())
             .createdAt(notification.getCreatedAt())
             .build();

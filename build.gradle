@@ -49,11 +49,17 @@ dependencies {
 
     implementation 'com.auth0:java-jwt:4.2.0'
 
+    // redis, redisson
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    implementation 'org.redisson:redisson:3.17.7'
+    implementation 'org.springframework.session:spring-session-data-redis'
+    implementation 'org.redisson:redisson-spring-boot-starter:3.17.7'
+
+    // kafka
+    implementation 'org.springframework.kafka:spring-kafka'
 
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'org.springframework.boot:spring-boot-starter-tomcat'
     runtimeOnly 'com.mysql:mysql-connector-j:8.0.33'
     annotationProcessor 'org.projectlombok:lombok'
 

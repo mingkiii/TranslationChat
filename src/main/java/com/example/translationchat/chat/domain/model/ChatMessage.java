@@ -26,14 +26,15 @@ import org.springframework.data.annotation.CreatedDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Chat {
+public class ChatMessage {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id")
-    private Room room;
+    @JoinColumn(name = "chat_room_id")
+    private ChatRoom chatRoom;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -47,4 +48,13 @@ public class Chat {
     @CreatedDate
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
     private LocalDateTime createdAt;
+
+    public static ChatMessage create(User user, ChatRoom chatRoom, String message) {
+        return ChatMessage.builder()
+            .message(message)
+            .user(user)
+            .chatRoom(chatRoom)
+            .language(user.getLanguage())
+            .build();
+    }
 }
