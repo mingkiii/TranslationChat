@@ -35,6 +35,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
@@ -91,7 +92,7 @@ class UserControllerTest {
     // 회원 탈퇴
     @Test
     @DisplayName("회원 탈퇴 - 성공")
-    @WithMockUser(username = "test@test.com")
+    @WithUserDetails("email")
     void testWithdraw_Success() throws Exception {
         User user = User.builder()
             .email("test@test.com")

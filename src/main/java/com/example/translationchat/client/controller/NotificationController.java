@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/notification")
+@RequestMapping("/v1/notification")
 @RequiredArgsConstructor
 public class NotificationController {
 
@@ -31,7 +31,7 @@ public class NotificationController {
 
     // 요청 읽음/ 요청 수락,거절 -> 알림을 읽은 의미로 해당 알림 삭제
     @DeleteMapping
-    public void delete(@RequestParam Long notificationId) {
+    public void delete(@RequestParam("id") Long notificationId) {
         notificationService.delete(notificationId);
     }
 }
