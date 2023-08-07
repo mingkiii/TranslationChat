@@ -1,6 +1,5 @@
 package com.example.translationchat.client.domain.form;
 
-import com.example.translationchat.client.domain.type.ActiveStatus;
 import com.example.translationchat.client.domain.type.Language;
 import com.example.translationchat.client.domain.type.Nationality;
 import javax.validation.constraints.Pattern;
@@ -25,5 +24,12 @@ public class UpdateUserForm {
 
     private Nationality nationality;
     private Language language;
-    private ActiveStatus status;
+
+    public void setNationality(String nationality) {
+        this.nationality = (nationality != null && !nationality.isEmpty()) ? Nationality.valueOf(nationality) : null;
+    }
+
+    public void setLanguage(String language) {
+        this.language = (language != null && !language.isEmpty()) ? Language.valueOf(language) : null;
+    }
 }

@@ -26,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -92,20 +93,22 @@ public class UserService {
         UsernamePasswordAuthenticationToken authenticationToken =
             new UsernamePasswordAuthenticationToken(email, password);
 
-        Authentication authentication =
-            authenticationManager.authenticate(authenticationToken);
+        try {
+            Authentication authentication =
+                authenticationManager.authenticate(authenticationToken);
 
-        // 인증이 완료된 객체면
-        if (authentication != null && authentication.isAuthenticated()) {
-            PrincipalDetails principalDetails = (PrincipalDetails) authentication.getPrincipal();
-
-            User user = principalDetails.getUser();
-            // 로그인 시 활성 상태가 된다.
-            user.setStatus(ActiveStatus.ONLINE);
-            userRepository.save(user);
-
-            return provider.createToken(user);
-        } else {
+            // 인증이 완료된 객체면
+            if (authentication != null && authentication.isAuthenticated()) {
+                PrincipalDetails principalDetails = (PrincipalDetails) authentication.getPrincipal();
+                User user = principalDetails.getUser();
+                // 로그인 시 활성 상태가 된다.
+                user.setStatus(ActiveStatus.ONLINE);
+                userRepository.save(user);
+                return provider.createToken(user);
+            } else {
+                throw new CustomException(LOGIN_FAIL);
+            }
+        } catch (AuthenticationException e) {
             throw new CustomException(LOGIN_FAIL);
         }
     }
@@ -132,55 +135,53 @@ public class UserService {
     }
 
     // 회원(본인) 정보 수정
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public MyInfoDto updateInfo(Authentication authentication, UpdateUserForm form) {
         User user = getUser(authentication);
 
         // 이름 변경
         String newName = form.getName();
-        if (!newName.isEmpty() && !newName.equals(user.getName())) {
-            // 이름 중복 체크
-            try {
-                boolean nameLock = redisLockUtil.getLock(newName, 5);
-                if (nameLock) {
-                    if (userRepository.existsByName(newName)) {
-                        throw new CustomException(ALREADY_REGISTERED_NAME);
+        if (newName != null) {
+            if (!newName.isEmpty() && !newName.equals(user.getName())) {
+                // 이름 중복 체크
+                try {
+                    boolean nameLock = redisLockUtil.getLock(newName, 5);
+                    if (nameLock) {
+                        if (userRepository.existsByName(newName)) {
+                            throw new CustomException(ALREADY_REGISTERED_NAME);
+                        }
+                        user.setName(newName);
                     }
-                    user.setName(newName);
+                } catch (Exception e) {
+                    redisLockUtil.unLock(newName);
+                    throw e;
+                } finally {
+                    redisLockUtil.unLock(newName);
                 }
-            } catch (Exception e) {
-                redisLockUtil.unLock(newName);
-                throw e;
-            } finally {
-                redisLockUtil.unLock(newName);
             }
         }
 
         // 비밀번호 변경
         String newPassword = form.getPassword();
-        if (!newPassword.isEmpty() && !passwordEncoder.matches(newPassword,
-            user.getPassword())) {
+        if (newPassword != null && !passwordEncoder.matches(newPassword, user.getPassword())) {
             user.setPassword(passwordEncoder.encode(newPassword));
         }
 
         // 국적 변경
         Nationality newNationality = form.getNationality();
-        if (!newNationality.equals(user.getNationality())) {
+        if (newNationality != null && newNationality != user.getNationality()) {
             user.setNationality(newNationality);
         }
 
         // 언어 변경
         Language newLanguage = form.getLanguage();
-        if (!newLanguage.equals(user.getLanguage())) {
+        System.out.println(newLanguage);
+        if (newLanguage != null && newLanguage != user.getLanguage()) {
             user.setLanguage(newLanguage);
         }
 
-        // 활성 상태 변경
-        user.setStatus(form.getStatus());
-
-        userRepository.save(user);
-
-        return MyInfoDto.from(user); // 변경된 유저 정보를 반환
+        User save = userRepository.save(user);
+        return MyInfoDto.from(save); // 변경된 유저 정보를 반환
     }
 
     // 다른 유저 검색

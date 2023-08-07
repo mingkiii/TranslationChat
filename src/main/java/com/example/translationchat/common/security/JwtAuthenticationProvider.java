@@ -43,13 +43,12 @@ public class JwtAuthenticationProvider {
     // Jwt 토큰 생성
     public String createToken(User user) {
         Date now = new Date();
-        String token = JWT.create()
+        return JWT.create()
             .withSubject(user.getEmail())
             .withExpiresAt(new Date(now.getTime() + TOKEN_VALID_TIME))
             .withClaim("id", user.getId())
             .withClaim("email", user.getEmail())
             .sign(getSign());
-        return TOKEN_PREFIX + token;
     }
 
     // 인증 객체 생성

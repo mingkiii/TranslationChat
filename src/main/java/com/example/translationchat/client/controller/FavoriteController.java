@@ -9,13 +9,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/favorite")
+@RequestMapping("/v1/favorite")
 @RequiredArgsConstructor
 public class FavoriteController {
 
@@ -24,15 +23,15 @@ public class FavoriteController {
     // 관심 유저 등록
     @PostMapping("/register")
     public ResponseEntity<String> register(
-        Authentication authentication, @RequestParam Long userId
+        Authentication authentication, @RequestParam("id") Long userId
     ) {
         return ResponseEntity.ok(favoriteService.register(authentication, userId));
     }
 
     // 유저 차단
-    @PutMapping("/block")
+    @PostMapping("/block")
     public ResponseEntity<String> block(
-        Authentication authentication, @RequestParam Long userId
+        Authentication authentication, @RequestParam("id") Long userId
     ) {
         return ResponseEntity.ok(favoriteService.block(authentication, userId));
     }
@@ -40,7 +39,7 @@ public class FavoriteController {
     // 차단 해제
     @DeleteMapping("/unblock")
     public ResponseEntity<String> unblock(
-        Authentication authentication, @RequestParam Long userId
+        Authentication authentication, @RequestParam("id") Long userId
     ) {
         return ResponseEntity.ok(favoriteService.unBlock(authentication, userId));
     }
@@ -51,7 +50,7 @@ public class FavoriteController {
         return ResponseEntity.ok(favoriteService.favoriteList(authentication));
     }
 
-    // 차단한 친구목록 조회
+    // 차단한 유저 목록 조회
     @GetMapping("/blocked-list")
     public ResponseEntity<List<UserInfoDto>> blockedList(Authentication authentication) {
         return ResponseEntity.ok(favoriteService.blockedList(authentication));
@@ -59,7 +58,7 @@ public class FavoriteController {
 
     // 관심 유저 삭제
     @DeleteMapping
-    public void delete(Authentication authentication, @RequestParam Long userId) {
+    public void delete(Authentication authentication, @RequestParam("id") Long userId) {
         favoriteService.delete(authentication, userId);
     }
 }

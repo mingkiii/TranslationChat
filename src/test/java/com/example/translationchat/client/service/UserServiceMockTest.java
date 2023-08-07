@@ -116,12 +116,9 @@ public class UserServiceMockTest {
         User user = User.builder()
             .email(userEmail)
             .build();
-        PrincipalDetails principalDetails = new PrincipalDetails(user);
-        Authentication authentication = mock(Authentication.class);
-        when(authentication.getPrincipal()).thenReturn(principalDetails);
 
         // when
-        userService.delete(authentication);
+        userService.delete(createMockAuthentication(user));
 
         // then
         verify(userRepository, times(1)).delete(user);
@@ -139,8 +136,6 @@ public class UserServiceMockTest {
             .language(Language.FR)
             .randomApproval(true)
             .build();
-
-        when(userRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
 
         // when
         MyInfoDto userInfo = userService.getInfo(createMockAuthentication(user));
@@ -161,23 +156,35 @@ public class UserServiceMockTest {
         String userEmail = "test@test.com";
         String userPassword = "oldPassword";
         User user = User.builder()
+            .id(1L)
             .email(userEmail)
             .password(userPassword)
             .name("OldUser")
             .nationality(Nationality.CANADA)
             .language(Language.EN)
+            .randomApproval(true)
             .build();
         UpdateUserForm form = UpdateUserForm.builder()
             .name("Updated")
             .password("newPassword")
             .nationality(Nationality.UK)
-            .language(Language.FR)
+            .language(Language.KO)
             .build();
 
-        when(userRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
+        User updateUser = User.builder()
+            .id(1L)
+            .email(userEmail)
+            .name("Updated")
+            .password("encodedPassword")
+            .nationality(Nationality.UK)
+            .language(Language.KO)
+            .randomApproval(true)
+            .build();
+
         when(passwordEncoder.encode(form.getPassword())).thenReturn("encodedPassword");
         when(userRepository.existsByName(form.getName())).thenReturn(false);
         when(redisLockUtil.getLock(anyString(), anyLong())).thenReturn(true);
+        when(userRepository.save(user)).thenReturn(updateUser);
         // when
         MyInfoDto updatedUserInfo = userService.updateInfo(createMockAuthentication(user), form);
 
