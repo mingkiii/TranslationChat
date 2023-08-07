@@ -18,6 +18,7 @@ public class NotificationForm {
     @NotNull
     private User user;
     private Long args;
+    private Long roomId;
     @NotNull
     private ContentType contentType;
 }

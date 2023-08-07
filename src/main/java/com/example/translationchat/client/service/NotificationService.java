@@ -34,6 +34,7 @@ public class NotificationService {
         notificationRepository.save(Notification.builder()
             .user(form.getUser())
             .args(form.getArgs())
+            .roomId(form.getRoomId())
             .content(form.getContentType())
             .build());
 
