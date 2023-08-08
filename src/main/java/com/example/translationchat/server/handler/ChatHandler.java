@@ -46,6 +46,9 @@ public class ChatHandler extends TextWebSocketHandler {
         if (roomSessions != null) {
             roomSessions.remove(session);
         }
+        if (Objects.requireNonNull(roomSessions).size() == 0) {
+            chatRooms.remove(roomId);
+        }
         log.info(session + "의 클라이언트 접속 해제");
     }
 
@@ -64,10 +67,9 @@ public class ChatHandler extends TextWebSocketHandler {
         if (uriParts.length >= 4 && uriParts[3].equals("msg")) {
             return Long.valueOf(uriParts[4]);
         }
-        // /v1/chat/room/out/{roomId}, /v1/chat/room/delete/{roomId} 일 때 roomId 추출
-        if (uriParts.length >= 5 && uriParts[3].equals("room") &&
-            (uriParts[4].equals("out") || uriParts[4].equals("delete"))) {
-            roomId = Long.valueOf(uriParts[4]);
+        // /v1/chat/room/out/{roomId} 일 때 roomId 추출
+        if (uriParts.length >= 5 && uriParts[3].equals("room") && uriParts[4].equals("out")) {
+            roomId = Long.valueOf(uriParts[5]);
         }
         return roomId;
     }

@@ -1,9 +1,15 @@
 package com.example.translationchat.chat.controller;
 
+import com.example.translationchat.chat.domain.dto.ChatRoomDto;
 import com.example.translationchat.chat.service.ChatRoomUserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -33,6 +39,18 @@ public class ChatRoomUserController {
     @DeleteMapping
     public void refuse(Authentication authentication, @RequestParam("id") Long notificationId) {
         chatRoomUserService.refuse(authentication, notificationId);
+    }
+
+    // 대화방 목록 조회
+    @GetMapping("/rooms")
+    public ResponseEntity<Page<ChatRoomDto>> getUserRooms(Authentication authentication, Pageable pageable) {
+        return ResponseEntity.ok(chatRoomUserService.getUserRooms(authentication, pageable));
+    }
+
+    // 대화방 나가기
+    @DeleteMapping("/room/out/{roomId}")
+    public void outRoom(Authentication authentication, @PathVariable Long roomId) {
+        chatRoomUserService.outRoom(authentication, roomId);
     }
 }
 

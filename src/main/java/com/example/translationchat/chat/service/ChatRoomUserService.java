@@ -9,8 +9,10 @@ import static com.example.translationchat.common.exception.ErrorCode.NOT_YOUR_NO
 import static com.example.translationchat.common.exception.ErrorCode.OFFLINE_USER;
 import static com.example.translationchat.common.exception.ErrorCode.USER_IS_BLOCKED;
 
+import com.example.translationchat.chat.domain.dto.ChatRoomDto;
 import com.example.translationchat.chat.domain.model.ChatRoom;
 import com.example.translationchat.chat.domain.model.ChatRoomUser;
+import com.example.translationchat.chat.domain.repository.ChatMessageRepository;
 import com.example.translationchat.chat.domain.repository.ChatRoomRepository;
 import com.example.translationchat.chat.domain.repository.ChatRoomUserRepository;
 import com.example.translationchat.client.domain.dto.NotificationDto;
@@ -29,6 +31,8 @@ import com.example.translationchat.server.handler.ChatHandler;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -48,6 +52,7 @@ public class ChatRoomUserService {
     private final NotificationService notificationService;
     private final ChatRoomUserRepository chatRoomUserRepository;
     private final ChatRoomRepository chatRoomRepository;
+    private final ChatMessageRepository chatMessageRepository;
 
     // 대화 요청
     @Transactional
@@ -217,5 +222,37 @@ public class ChatRoomUserService {
     private User getUserById(Long userId) {
         return userRepository.findById(userId)
             .orElseThrow(() -> new CustomException(NOT_FOUND_USER));
+    }
+
+    // 대화방 목록 조회
+    public Page<ChatRoomDto> getUserRooms(
+        Authentication authentication, Pageable pageable
+    ) {
+        User user = getUser(authentication);
+        Page<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findAllByUser(user, pageable);
+        return chatRoomUsers.map(
+            chatRoomUser -> ChatRoomDto.from(chatRoomUser.getChatRoom())
+        );
+    }
+
+    // 대화방 나가기
+    public void outRoom(Authentication authentication, Long roomId) {
+        User user = getUser(authentication);
+
+        ChatRoom room = chatRoomRepository.findById(roomId)
+            .orElseThrow(() -> new CustomException(NOT_INVALID_ROOM));
+
+        ChatRoomUser chatRoomUser = chatRoomUserRepository.findByUserAndChatRoom(user, room)
+            .orElseThrow(() -> new CustomException(NOT_INVALID_ROOM));
+
+        chatRoomUserRepository.delete(chatRoomUser);
+
+        // 대화방에 모두 나가기 한 경우 방, 메세지, 카프카 토픽 삭제
+        if (room.getChatRoomUsers().size() == 0) {
+            // 대화 메시지 삭제 로직 추가
+            chatMessageRepository.deleteByChatRoom(room);
+            chatRoomRepository.delete(room);
+            kafkaTopicService.deleteTopic(TOPIC + roomId);
+        }
     }
 }
