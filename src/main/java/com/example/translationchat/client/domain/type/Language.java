@@ -1,19 +1,19 @@
 package com.example.translationchat.client.domain.type;
 
 public enum Language {
-    KO("Korean"),
-    EN("English"),
-    JA("Japanese"),
-    ZH_CN("Simplified Chinese"),
-    ZH_TW("Traditional Chinese"),
-    VI("Vietnamese"),
-    ID("Indonesian"),
-    TH("Thai"),
-    DE("German"),
-    RU("Russian"),
-    ES("Spanish"),
-    IT("Italian"),
-    FR("French");
+    ko("Korean"),
+    en("English"),
+    ja("Japanese"),
+    zh_cn("Simplified Chinese"),
+    zh_tw("Traditional Chinese"),
+    vi("Vietnamese"),
+    id("Indonesian"),
+    th("Thai"),
+    de("German"),
+    ru("Russian"),
+    es("Spanish"),
+    it("Italian"),
+    fr("French");
 
     private final String displayName;
 

@@ -5,6 +5,7 @@ import com.example.translationchat.client.domain.type.Language;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDateTime;
 import javax.persistence.Entity;
+import javax.persistence.EntityListeners;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
@@ -19,6 +20,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Getter
@@ -26,6 +28,7 @@ import org.springframework.data.annotation.CreatedDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public class ChatMessage {
 
     @Id
@@ -45,15 +48,31 @@ public class ChatMessage {
     @Enumerated(EnumType.STRING)
     private Language language;
 
+    private String transMessage;
+
+    @Enumerated(EnumType.STRING)
+    private Language transLanguage;
+
     @CreatedDate
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
     private LocalDateTime createdAt;
 
-    public static ChatMessage create(User user, ChatRoom chatRoom, String message) {
+    public static ChatMessage createTrans(User user, ChatRoom chatRoom, String message, String transMessage, Language transLanguage) {
         return ChatMessage.builder()
-            .message(message)
             .user(user)
             .chatRoom(chatRoom)
+            .message(message)
+            .language(user.getLanguage())
+            .transMessage(transMessage)
+            .transLanguage(transLanguage)
+            .build();
+    }
+
+    public static ChatMessage create(User user, ChatRoom chatRoom, String message) {
+        return ChatMessage.builder()
+            .user(user)
+            .chatRoom(chatRoom)
+            .message(message)
             .language(user.getLanguage())
             .build();
     }

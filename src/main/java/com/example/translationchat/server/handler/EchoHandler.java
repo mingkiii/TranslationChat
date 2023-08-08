@@ -4,14 +4,12 @@ import com.example.translationchat.common.security.principal.PrincipalDetails;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 @Component
-@RequiredArgsConstructor
 public class EchoHandler extends TextWebSocketHandler {
     // 로그인 한 유저 맵
     Map<Long, WebSocketSession> userSessionsMap = new HashMap<>();

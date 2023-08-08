@@ -29,3 +29,7 @@ spring:
 
 jwt:
   secret: Y2hvcHBhLWRvbnQtYml0ZS1tZS1zcHJpbmctYm9vdC1qd3QtdGVzdC1zZWNyZXQta2V5LWNob3BwYS1kb250LWJpdGUtbWUtc3ByaW5nLWJvb3Qtand0LXRlc3Qtc2VjcmV0LWtleQo=
+
+papa go:
+  client-id: ${CLIENT_ID}
+  client-secret: ${CLIENT_SECRET}
