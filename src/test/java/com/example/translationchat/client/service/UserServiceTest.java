@@ -66,7 +66,7 @@ class UserServiceTest {
             .password("test123!")
             .name("test")
             .nationality(Nationality.UK)
-            .language(Language.FR)
+            .language(Language.fr)
             .build();
 
         // when
@@ -86,14 +86,14 @@ class UserServiceTest {
             .name(name)
             .password("test123!")
             .nationality(Nationality.UK)
-            .language(Language.FR)
+            .language(Language.fr)
             .build();
         SignUpForm form2 = SignUpForm.builder()
             .email("test2@example.com")
             .name(name)
             .password("test123!")
             .nationality(Nationality.KOREA)
-            .language(Language.KO)
+            .language(Language.ko)
             .build();
 
         // when
@@ -152,7 +152,7 @@ class UserServiceTest {
             .password("password")
             .name("existing")
             .nationality(Nationality.KOREA)
-            .language(Language.KO)
+            .language(Language.ko)
             .build();
         userRepository.save(existingUser);
         SignUpForm signUpForm = SignUpForm.builder()
@@ -160,7 +160,7 @@ class UserServiceTest {
             .password("test123!")
             .name("test")
             .nationality(Nationality.UK)
-            .language(Language.FR)
+            .language(Language.fr)
             .build();
         // when
         CustomException exception = assertThrows(
@@ -177,7 +177,7 @@ class UserServiceTest {
             .password("password")
             .name("existing") // Use existing name to test duplicate
             .nationality(Nationality.KOREA)
-            .language(Language.KO)
+            .language(Language.ko)
             .build();
         userRepository.save(existingUser);
         SignUpForm signUpForm = SignUpForm.builder()
@@ -185,7 +185,7 @@ class UserServiceTest {
             .password("test123!")
             .name(existingUser.getName())
             .nationality(Nationality.UK)
-            .language(Language.FR)
+            .language(Language.fr)
             .build();
         // when
         CustomException exception = assertThrows(

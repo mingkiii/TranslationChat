@@ -361,7 +361,7 @@ class FavoriteServiceTest {
             .name("favorite1")
             .email("favorite1@example.com")
             .nationality(Nationality.UK)
-            .language(Language.FR)
+            .language(Language.fr)
             .randomApproval(true)
             .build();
         User favorite2 = User.builder()
@@ -369,7 +369,7 @@ class FavoriteServiceTest {
             .name("favorite2")
             .email("favorite2@example.com")
             .nationality(Nationality.UK)
-            .language(Language.FR)
+            .language(Language.fr)
             .randomApproval(true)
             .build();
 
@@ -408,7 +408,7 @@ class FavoriteServiceTest {
             .name("favorite1")
             .email("favorite1@example.com")
             .nationality(Nationality.UK)
-            .language(Language.FR)
+            .language(Language.fr)
             .randomApproval(true)
             .build();
         User favorite2 = User.builder()
@@ -416,7 +416,7 @@ class FavoriteServiceTest {
             .name("favorite2")
             .email("favorite2@example.com")
             .nationality(Nationality.UK)
-            .language(Language.FR)
+            .language(Language.fr)
             .randomApproval(true)
             .build();
 

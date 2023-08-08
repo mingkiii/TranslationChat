@@ -56,7 +56,7 @@ class UserControllerTest {
             .name("test")
             .password("test123!")
             .nationality(Nationality.UK)
-            .language(Language.FR)
+            .language(Language.fr)
             .build();
 
         String expectedResult = "회원가입이 완료되었습니다.";
@@ -120,7 +120,7 @@ class UserControllerTest {
             .email("test@test.com")
             .name("test")
             .nationality(Nationality.UK)
-            .language(Language.FR)
+            .language(Language.fr)
             .build();
         MyInfoDto userInfoDto = MyInfoDto.from(user);
 
@@ -144,14 +144,14 @@ class UserControllerTest {
             .name("new_test")
             .password("new1234!")
             .nationality(Nationality.UK)
-            .language(Language.FR)
+            .language(Language.fr)
             .build();
 
         MyInfoDto updatedUserInfo = MyInfoDto.builder()
             .email("test@test.com")
             .name("new_test")
             .nationality(Nationality.UK)
-            .language(Language.FR.getDisplayName())
+            .language(Language.fr.getDisplayName())
             .build();
 
         when(userService.updateInfo(any(Authentication.class), any(

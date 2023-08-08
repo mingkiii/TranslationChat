@@ -133,7 +133,7 @@ public class UserServiceMockTest {
             .email(userEmail)
             .name("Test User")
             .nationality(Nationality.UK)
-            .language(Language.FR)
+            .language(Language.fr)
             .randomApproval(true)
             .build();
 
@@ -145,7 +145,7 @@ public class UserServiceMockTest {
         assertEquals(userEmail, userInfo.getEmail());
         assertEquals("Test User", userInfo.getName());
         assertEquals(Nationality.UK, userInfo.getNationality());
-        assertEquals(Language.FR.getDisplayName(), userInfo.getLanguage());
+        assertEquals(Language.fr.getDisplayName(), userInfo.getLanguage());
         assertTrue(userInfo.isRandomApproval());
     }
 
@@ -161,14 +161,14 @@ public class UserServiceMockTest {
             .password(userPassword)
             .name("OldUser")
             .nationality(Nationality.CANADA)
-            .language(Language.EN)
+            .language(Language.en)
             .randomApproval(true)
             .build();
         UpdateUserForm form = UpdateUserForm.builder()
             .name("Updated")
             .password("newPassword")
             .nationality(Nationality.UK)
-            .language(Language.KO)
+            .language(Language.ko)
             .build();
 
         User updateUser = User.builder()
@@ -177,7 +177,7 @@ public class UserServiceMockTest {
             .name("Updated")
             .password("encodedPassword")
             .nationality(Nationality.UK)
-            .language(Language.KO)
+            .language(Language.ko)
             .randomApproval(true)
             .build();
 
@@ -205,13 +205,13 @@ public class UserServiceMockTest {
             .password(userPassword)
             .name("OldUser")
             .nationality(Nationality.CANADA)
-            .language(Language.EN)
+            .language(Language.en)
             .build();
         UpdateUserForm form = UpdateUserForm.builder()
             .name("Updated")
             .password("newPassword")
             .nationality(Nationality.UK)
-            .language(Language.FR)
+            .language(Language.fr)
             .build();
         when(userRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
         when(passwordEncoder.encode(form.getPassword())).thenReturn("encodedPassword");
@@ -233,12 +233,12 @@ public class UserServiceMockTest {
         User user1 = User.builder()
             .name("kim_minHo")
             .nationality(Nationality.UK)
-            .language(Language.FR)
+            .language(Language.fr)
             .build();
         User user2 = User.builder()
             .name("park_minSu")
             .nationality(Nationality.KOREA)
-            .language(Language.KO)
+            .language(Language.ko)
             .build();
         List<User> users = Arrays.asList(user1, user2);
 

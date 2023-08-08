@@ -25,6 +25,7 @@ import com.example.translationchat.client.service.NotificationService;
 import com.example.translationchat.common.exception.CustomException;
 import com.example.translationchat.common.kafka.service.KafkaTopicService;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
+import com.example.translationchat.server.handler.ChatHandler;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -32,11 +33,13 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.socket.WebSocketSession;
 
 @Service
 @RequiredArgsConstructor
 public class ChatRoomUserService {
     private static final String TOPIC = "CHAT_ROOM";
+    private final ChatHandler chatHandler;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final KafkaTopicService kafkaTopicService;
 
@@ -48,7 +51,7 @@ public class ChatRoomUserService {
 
     // 대화 요청
     @Transactional
-    public void request(Authentication authentication, Long receiverUserId) {
+    public void request(Authentication authentication, WebSocketSession session, Long receiverUserId) {
         User user = getUser(authentication);
         User receiver = getUserById(receiverUserId);
 
@@ -58,6 +61,9 @@ public class ChatRoomUserService {
         // 대화방 생성
         String title = String.format("%s 님과 %s 님의 대화", user.getName(), receiver.getName());
         ChatRoom room = chatRoomRepository.save(ChatRoom.builder().title(title).build());
+
+        // 웹소켓에 대화방아이디 등록
+        chatHandler.putRoomIdSession(session, room.getId());
 
         // Kafka Topic 에 구독자 추가
         String topicName = TOPIC + room.getId();
@@ -117,7 +123,7 @@ public class ChatRoomUserService {
 
     // 대화 요청 수락
     @Transactional
-    public void accept(Authentication authentication, Long notificationId) {
+    public void accept(Authentication authentication, WebSocketSession session, Long notificationId) {
         NotificationDto notificationDto = notificationService.getNotificationDto(notificationId);
         User user = getUser(authentication);
         // 유저의 알림인지 확인
@@ -132,6 +138,9 @@ public class ChatRoomUserService {
         // 대화방 정보(유저,방) 저장
         createChatRoomUser(user, room);
         createChatRoomUser(requester, room);
+
+        // 웹소켓에 등록된 대화방아이디 세션리스트에 세션 추가
+        chatHandler.putRoomIdSession(session, room.getId());
 
         // Kafka Topic 에 구독자 추가
         String topicName = TOPIC + room.getId();
@@ -167,6 +176,9 @@ public class ChatRoomUserService {
         // 요청 시 만든 대화방 삭제
         ChatRoom room = checkRoom(notificationDto.getRoomId(), user, requester);
         chatRoomRepository.delete(room);
+
+        // 웹소켓에 등록된 대화방아이디 삭제
+        chatHandler.deleteRoomId(room.getId());
 
         // 요청시 생성된 kafka topic 삭제
         kafkaTopicService.deleteTopic(TOPIC + room.getId());
