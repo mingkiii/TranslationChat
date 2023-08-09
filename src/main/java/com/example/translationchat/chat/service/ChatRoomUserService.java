@@ -9,8 +9,10 @@ import static com.example.translationchat.common.exception.ErrorCode.NOT_YOUR_NO
 import static com.example.translationchat.common.exception.ErrorCode.OFFLINE_USER;
 import static com.example.translationchat.common.exception.ErrorCode.USER_IS_BLOCKED;
 
+import com.example.translationchat.chat.domain.dto.ChatRoomDto;
 import com.example.translationchat.chat.domain.model.ChatRoom;
 import com.example.translationchat.chat.domain.model.ChatRoomUser;
+import com.example.translationchat.chat.domain.repository.ChatMessageRepository;
 import com.example.translationchat.chat.domain.repository.ChatRoomRepository;
 import com.example.translationchat.chat.domain.repository.ChatRoomUserRepository;
 import com.example.translationchat.client.domain.dto.NotificationDto;
@@ -23,32 +25,35 @@ import com.example.translationchat.client.domain.type.ActiveStatus;
 import com.example.translationchat.client.domain.type.ContentType;
 import com.example.translationchat.client.service.NotificationService;
 import com.example.translationchat.common.exception.CustomException;
-import com.example.translationchat.common.kafka.service.KafkaTopicService;
+import com.example.translationchat.common.kafka.Producers;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
+import com.example.translationchat.server.handler.ChatHandler;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
-import org.apache.kafka.clients.admin.NewTopic;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.socket.WebSocketSession;
 
 @Service
 @RequiredArgsConstructor
 public class ChatRoomUserService {
-    private static final String TOPIC = "CHAT_ROOM";
-    private final KafkaTemplate<String, String> kafkaTemplate;
-    private final KafkaTopicService kafkaTopicService;
+
+    private final ChatHandler chatHandler;
+    private final Producers producers;
 
     private final UserRepository userRepository;
     private final FavoriteRepository favoriteRepository;
     private final NotificationService notificationService;
     private final ChatRoomUserRepository chatRoomUserRepository;
     private final ChatRoomRepository chatRoomRepository;
+    private final ChatMessageRepository chatMessageRepository;
 
     // 대화 요청
     @Transactional
-    public void request(Authentication authentication, Long receiverUserId) {
+    public void request(Authentication authentication, WebSocketSession session, Long receiverUserId) {
         User user = getUser(authentication);
         User receiver = getUserById(receiverUserId);
 
@@ -59,10 +64,11 @@ public class ChatRoomUserService {
         String title = String.format("%s 님과 %s 님의 대화", user.getName(), receiver.getName());
         ChatRoom room = chatRoomRepository.save(ChatRoom.builder().title(title).build());
 
-        // Kafka Topic 에 구독자 추가
-        String topicName = TOPIC + room.getId();
-        NewTopic newTopic = new NewTopic(topicName, 1, (short) 1);
-        kafkaTemplate.send(newTopic.name(), "Subscribed");
+        // 웹소켓에 대화방아이디 등록
+        chatHandler.putRoomIdSession(session, room.getId());
+
+        // Kafka Topic 키(roomId)에 구독자 추가
+        producers.produceMessage(room.getId(), "Subscribed");
 
         // 요청받는 유저에게 대화 요청 알림 생성
         String message = String.format("%s 님이 %s 님에게 %s",
@@ -117,7 +123,7 @@ public class ChatRoomUserService {
 
     // 대화 요청 수락
     @Transactional
-    public void accept(Authentication authentication, Long notificationId) {
+    public void accept(Authentication authentication, WebSocketSession session, Long notificationId) {
         NotificationDto notificationDto = notificationService.getNotificationDto(notificationId);
         User user = getUser(authentication);
         // 유저의 알림인지 확인
@@ -133,9 +139,11 @@ public class ChatRoomUserService {
         createChatRoomUser(user, room);
         createChatRoomUser(requester, room);
 
-        // Kafka Topic 에 구독자 추가
-        String topicName = TOPIC + room.getId();
-        kafkaTemplate.send(topicName, "Subscribed");
+        // 웹소켓에 등록된 대화방아이디 세션리스트에 세션 추가
+        chatHandler.putRoomIdSession(session, room.getId());
+
+        // Kafka Topic 키(roomId)에 구독자 추가
+        producers.produceMessage(room.getId(), "Subscribed");
 
         // 대화 요청 알림 삭제
         notificationService.delete(notificationId);
@@ -168,8 +176,11 @@ public class ChatRoomUserService {
         ChatRoom room = checkRoom(notificationDto.getRoomId(), user, requester);
         chatRoomRepository.delete(room);
 
-        // 요청시 생성된 kafka topic 삭제
-        kafkaTopicService.deleteTopic(TOPIC + room.getId());
+        // 웹소켓에 등록된 대화방아이디 삭제
+        chatHandler.deleteRoomId(room.getId());
+
+        // 요청시 생성된 kafka topic 키(roomId) 구독 취소 메세지 남김.
+        producers.produceMessage(room.getId(), "Unsubscribed");
 
         // 요청자에게 요청 거절 알림 생성
         String message = String.format("%s 님이 %s 님의 %s",
@@ -205,5 +216,37 @@ public class ChatRoomUserService {
     private User getUserById(Long userId) {
         return userRepository.findById(userId)
             .orElseThrow(() -> new CustomException(NOT_FOUND_USER));
+    }
+
+    // 대화방 목록 조회
+    public Page<ChatRoomDto> getUserRooms(
+        Authentication authentication, Pageable pageable
+    ) {
+        User user = getUser(authentication);
+        Page<ChatRoomUser> chatRoomUsers = chatRoomUserRepository.findAllByUser(user, pageable);
+        return chatRoomUsers.map(
+            chatRoomUser -> ChatRoomDto.from(chatRoomUser.getChatRoom())
+        );
+    }
+
+    // 대화방 나가기
+    public void outRoom(Authentication authentication, Long roomId) {
+        User user = getUser(authentication);
+
+        ChatRoom room = chatRoomRepository.findById(roomId)
+            .orElseThrow(() -> new CustomException(NOT_INVALID_ROOM));
+
+        ChatRoomUser chatRoomUser = chatRoomUserRepository.findByUserAndChatRoom(user, room)
+            .orElseThrow(() -> new CustomException(NOT_INVALID_ROOM));
+
+        chatRoomUserRepository.delete(chatRoomUser);
+
+        // 대화방에 모두 나가기 한 경우 방, 메세지, kafka 키(roomId) 구독 취소 메세지 남김.
+        if (room.getChatRoomUsers().size() == 0) {
+            // 대화 메시지 삭제 로직 추가
+            chatMessageRepository.deleteByChatRoom(room);
+            chatRoomRepository.delete(room);
+            producers.produceMessage(room.getId(), "Unsubscribed");
+        }
     }
 }

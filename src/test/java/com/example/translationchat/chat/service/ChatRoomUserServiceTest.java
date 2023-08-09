@@ -28,17 +28,18 @@ import com.example.translationchat.client.domain.type.ActiveStatus;
 import com.example.translationchat.client.domain.type.ContentType;
 import com.example.translationchat.client.service.NotificationService;
 import com.example.translationchat.common.exception.CustomException;
-import com.example.translationchat.common.kafka.service.KafkaTopicService;
+import com.example.translationchat.common.kafka.Producers;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
+import com.example.translationchat.server.handler.ChatHandler;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.socket.WebSocketSession;
 
 @SpringBootTest
 class ChatRoomUserServiceTest {
@@ -59,10 +60,13 @@ class ChatRoomUserServiceTest {
     private ChatRoomRepository roomRepository;
 
     @Mock
-    private KafkaTemplate<String, String> kafkaTemplate;
+    private Producers producers;
 
     @Mock
-    private KafkaTopicService kafkaTopicService;
+    private ChatHandler chatHandler;
+
+    @Mock
+    WebSocketSession session;
 
     @InjectMocks
     private ChatRoomUserService chatRoomUserService;
@@ -98,11 +102,12 @@ class ChatRoomUserServiceTest {
         when(roomRepository.save(any(ChatRoom.class))).thenReturn(room);
 
         // when
-        chatRoomUserService.request(createMockAuthentication(sender), 2L);
+        chatRoomUserService.request(createMockAuthentication(sender), session,2L);
 
         // then
-        verify(kafkaTemplate, times(1)).send(anyString(), anyString());
+        verify(producers, times(1)).produceMessage(anyLong(), anyString());
         verify(notificationService).create(any(NotificationForm.class), anyString());
+        verify(chatHandler, times(1)).putRoomIdSession(session, room.getId());
     }
 
     @Test
@@ -124,7 +129,7 @@ class ChatRoomUserServiceTest {
         when(userRepository.findById(2L)).thenReturn(Optional.of(receiver));
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () -> chatRoomUserService.request(createMockAuthentication(sender), 2L));
+            () -> chatRoomUserService.request(createMockAuthentication(sender), session,2L));
         //then
         assertEquals(OFFLINE_USER, exception.getErrorCode());
     }
@@ -154,7 +159,7 @@ class ChatRoomUserServiceTest {
             .thenReturn(Optional.of(userFavorite));
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () -> chatRoomUserService.request(createMockAuthentication(user), 2L));
+            () -> chatRoomUserService.request(createMockAuthentication(user), session,2L));
         //then
         assertEquals(USER_IS_BLOCKED, exception.getErrorCode());
     }
@@ -184,7 +189,7 @@ class ChatRoomUserServiceTest {
             .thenReturn(Optional.of(favorite));
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () -> chatRoomUserService.request(createMockAuthentication(user), 2L));
+            () -> chatRoomUserService.request(createMockAuthentication(user), session,2L));
         //then
         assertEquals(OFFLINE_USER, exception.getErrorCode());
     }
@@ -211,7 +216,7 @@ class ChatRoomUserServiceTest {
 
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () -> chatRoomUserService.request(createMockAuthentication(sender), 2L));
+            () -> chatRoomUserService.request(createMockAuthentication(sender), session,2L));
         //then
         assertEquals(ALREADY_REQUEST_RECEIVER, exception.getErrorCode());
     }
@@ -237,7 +242,7 @@ class ChatRoomUserServiceTest {
 
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () -> chatRoomUserService.request(createMockAuthentication(sender), 2L));
+            () -> chatRoomUserService.request(createMockAuthentication(sender), session,2L));
         //then
         assertEquals(ALREADY_REQUEST, exception.getErrorCode());
     }
@@ -268,7 +273,7 @@ class ChatRoomUserServiceTest {
 
         // when
         CustomException exception = assertThrows(CustomException.class,
-            () -> chatRoomUserService.request(createMockAuthentication(sender), 2L));
+            () -> chatRoomUserService.request(createMockAuthentication(sender), session,2L));
         //then
         assertEquals(ALREADY_EXISTS_ROOM, exception.getErrorCode());
     }
@@ -302,9 +307,10 @@ class ChatRoomUserServiceTest {
         when(userRepository.findById(anyLong())).thenReturn(Optional.of(requester));
         when(roomRepository.findById(anyLong())).thenReturn(Optional.of(room));
         //when
-        chatRoomUserService.accept(createMockAuthentication(user), 1L);
+        chatRoomUserService.accept(createMockAuthentication(user), session,1L);
         //then
-        verify(kafkaTemplate, times(1)).send(anyString(), anyString());
+        verify(chatHandler, times(1)).putRoomIdSession(session, room.getId());
+        verify(producers, times(1)).produceMessage(anyLong(), anyString());
         verify(notificationService, times(1)).delete(anyLong());
     }
 
@@ -339,10 +345,10 @@ class ChatRoomUserServiceTest {
         //when
         chatRoomUserService.refuse(createMockAuthentication(user), 1L);
         //then
+        verify(chatHandler, times(1)).deleteRoomId(room.getId());
         verify(notificationService, times(1)).delete(anyLong());
         verify(roomRepository, times(1)).delete(room);
         verify(notificationService, times(1)).create(any(NotificationForm.class), anyString());
-        verify(kafkaTopicService, times(1)).deleteTopic(anyString());
     }
 
     private Authentication createMockAuthentication(User user) {
