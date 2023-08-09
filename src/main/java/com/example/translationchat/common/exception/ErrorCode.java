@@ -34,7 +34,10 @@ public enum ErrorCode {
     CHAT_ERROR(HttpStatus.BAD_REQUEST, "메세지가 올바르지 않습니다."),
     NOT_INVALID_ROOM(HttpStatus.BAD_REQUEST, "대화방이 유효하지 않습니다."),
 
-    LOCK_FAILED(HttpStatus.BAD_REQUEST, "이메일 또는 이름이 이미 사용중입니다."),
+    ALREADY_RANDOM_CHAT_ROOM(HttpStatus.BAD_REQUEST, "이미 랜덤 채팅방에 참여 중 있습니다."),
+    NOT_FOUND_RANDOM_CHAT_ROOM(HttpStatus.BAD_REQUEST, "참여 가능한 랜덤 채팅방이 없습니다.."),
+
+    LOCK_FAILED(HttpStatus.BAD_REQUEST, "락 실패, 해당 키는 이미 사용중입니다."),
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "올바른 입력값이 아닙니다.");
 
     private final HttpStatus httpStatus;
