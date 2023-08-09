@@ -40,7 +40,7 @@ import org.springframework.web.socket.WebSocketSession;
 @Service
 @RequiredArgsConstructor
 public class ChatRoomUserService {
-    
+
     private final ChatHandler chatHandler;
     private final Producers producers;
 
