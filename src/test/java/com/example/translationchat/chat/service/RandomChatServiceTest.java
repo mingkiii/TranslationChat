@@ -15,8 +15,12 @@ import static org.mockito.Mockito.when;
 
 import com.example.translationchat.chat.domain.model.RandomChatRoom;
 import com.example.translationchat.chat.domain.repository.RandomChatRoomRepository;
+import com.example.translationchat.chat.domain.request.RandomChatMessageRequest;
 import com.example.translationchat.client.domain.model.User;
+import com.example.translationchat.client.domain.type.Language;
+import com.example.translationchat.client.service.NotificationService;
 import com.example.translationchat.common.exception.CustomException;
+import com.example.translationchat.common.papago.PapagoService;
 import com.example.translationchat.common.redis.util.RedisLockUtil;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
 import java.time.Instant;
@@ -46,6 +50,12 @@ public class RandomChatServiceTest {
 
     @Mock
     private RedisLockUtil redisLockUtil;
+
+    @Mock
+    private PapagoService papagoService;
+
+    @Mock
+    private NotificationService notificationService;
 
     @Test
     @DisplayName("랜덤채팅방 생성 - 성공")
@@ -132,10 +142,16 @@ public class RandomChatServiceTest {
         //given
         RandomChatRoom room1 = RandomChatRoom.builder()
             .id(1L)
+            .createUser(User.builder()
+                .id(1L)
+                .build())
             .createdTime(Instant.now().minus(10, ChronoUnit.MINUTES))
             .build();
         RandomChatRoom room2 = RandomChatRoom.builder()
             .id(2L)
+            .createUser(User.builder()
+                .id(2L)
+                .build())
             .createdTime(Instant.now().minus(6, ChronoUnit.MINUTES))
             .build();
         List<RandomChatRoom> emptyRooms = Arrays.asList(room1, room2);
@@ -146,8 +162,53 @@ public class RandomChatServiceTest {
         //then
         verify(randomChatRoomRepository, times(1)).delete(room1);
         verify(randomChatRoomRepository, times(1)).delete(room2);
-        verify(messagingTemplate, times(2)).convertAndSend(eq("/sub/random/room/create"), anyString());
+        verify(notificationService, times(2)).sendNotificationMessage(anyLong(), anyString());
     }
+
+    @Test
+    @DisplayName("방 나가기 - 성공")
+    public void testOutRoom() {
+        //given
+        RandomChatRoom room = RandomChatRoom.builder()
+            .id(1L)
+            .createUser(User.builder()
+                .id(1L)
+                .build())
+            .build();
+        when(randomChatRoomRepository.findById(anyLong())).thenReturn(Optional.of(room));
+        //when
+        randomChatService.outRoom(createMockAuthentication(any(User.class)), 1L);
+        //then
+        verify(randomChatRoomRepository, times(1)).delete(room);
+    }
+
+    @Test
+        @DisplayName("채팅 메시지 보내기 - 성공")
+    public void testSendMessage() {
+        //given
+        RandomChatMessageRequest request = new RandomChatMessageRequest("안녕하세요");
+        User user = User.builder()
+            .id(1L)
+            .language(Language.ko)
+            .build();
+        User otherUser = User.builder()
+            .id(2L)
+            .language(Language.en)
+            .build();
+        RandomChatRoom room = RandomChatRoom.builder()
+            .id(1L)
+            .createUser(user)
+            .joinUser(otherUser)
+            .build();
+
+        when(randomChatRoomRepository.findById(anyLong())).thenReturn(Optional.of(room));
+        when(papagoService.getTransSentence(request.getContent(),user.getLanguage(), otherUser.getLanguage())).thenReturn("Hello");
+        //when
+        randomChatService.sendMessage(createMockAuthentication(user), 1L, request);
+        //then
+        verify(messagingTemplate, times(1)).convertAndSend(eq("/sub/random/chat/" + room.getId()), anyString());
+    }
+
     private Authentication createMockAuthentication(User user) {
         return new UsernamePasswordAuthenticationToken(new PrincipalDetails(user), null);
     }
