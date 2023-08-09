@@ -13,7 +13,7 @@ import com.example.translationchat.client.domain.type.Language;
 import com.example.translationchat.common.exception.CustomException;
 import com.example.translationchat.common.kafka.Producers;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
-import com.example.translationchat.common.util.PapagoUtil;
+import com.example.translationchat.common.papago.PapagoService;
 import com.example.translationchat.server.handler.ChatHandler;
 import java.io.IOException;
 import java.util.List;
@@ -31,7 +31,7 @@ import org.springframework.web.socket.WebSocketSession;
 @RequiredArgsConstructor
 public class ChatMessageService {
     private final Producers producers;
-    private final PapagoUtil papagoUtil;
+    private final PapagoService papagoService;
     private final ChatHandler chatHandler;
 
     private final ChatRoomRepository chatRoomRepository;
@@ -91,7 +91,7 @@ public class ChatMessageService {
 
     private String translateIfNeeded(String message, Language fromLanguage, Language toLanguage) {
         if (fromLanguage != toLanguage) {
-            return papagoUtil.getTransSentence(message, fromLanguage, toLanguage);
+            return papagoService.getTransSentence(message, fromLanguage, toLanguage);
         }
         return null;
     }

@@ -19,7 +19,7 @@ import com.example.translationchat.client.domain.type.ActiveStatus;
 import com.example.translationchat.client.domain.type.Language;
 import com.example.translationchat.common.kafka.Producers;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
-import com.example.translationchat.common.util.PapagoUtil;
+import com.example.translationchat.common.papago.PapagoService;
 import com.example.translationchat.server.handler.ChatHandler;
 import java.util.Arrays;
 import java.util.List;
@@ -38,7 +38,7 @@ public class ChatMessageServiceTest {
     private Producers producers;
 
     @Mock
-    private PapagoUtil papagoUtil;
+    private PapagoService papagoService;
 
     @Mock
     private ChatHandler chatHandler;
@@ -88,11 +88,12 @@ public class ChatMessageServiceTest {
         when(chatHandler.getRoomIdSession(anyLong())).thenReturn(Arrays.asList(mockSession, mockSession));
 
         when(chatRoomRepository.findById(anyLong())).thenReturn(Optional.of(room));
-        when(papagoUtil.getTransSentence(anyString(), any(), any())).thenReturn(translatedMessage);
+        when(papagoService.getTransSentence(anyString(), any(), any())).thenReturn(translatedMessage);
         when(chatMessageRepository.save(any(ChatMessage.class))).thenReturn(new ChatMessage());
 
         // Act
-        ChatMessageService chatMessageService = new ChatMessageService(producers, papagoUtil, chatHandler, chatRoomRepository, chatMessageRepository);
+        ChatMessageService chatMessageService = new ChatMessageService(producers,
+            papagoService, chatHandler, chatRoomRepository, chatMessageRepository);
         chatMessageService.sendMessage(createMockAuthentication(user), room.getId(), new ChatMessageRequest(originalMessage));
 
         // Assert

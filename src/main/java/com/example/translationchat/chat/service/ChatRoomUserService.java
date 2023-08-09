@@ -25,15 +25,13 @@ import com.example.translationchat.client.domain.type.ActiveStatus;
 import com.example.translationchat.client.domain.type.ContentType;
 import com.example.translationchat.client.service.NotificationService;
 import com.example.translationchat.common.exception.CustomException;
-import com.example.translationchat.common.kafka.service.KafkaTopicService;
+import com.example.translationchat.common.kafka.Producers;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
 import com.example.translationchat.server.handler.ChatHandler;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
-import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,10 +40,9 @@ import org.springframework.web.socket.WebSocketSession;
 @Service
 @RequiredArgsConstructor
 public class ChatRoomUserService {
-    private static final String TOPIC = "CHAT_ROOM";
+    
     private final ChatHandler chatHandler;
-    private final KafkaTemplate<String, String> kafkaTemplate;
-    private final KafkaTopicService kafkaTopicService;
+    private final Producers producers;
 
     private final UserRepository userRepository;
     private final FavoriteRepository favoriteRepository;
@@ -70,10 +67,8 @@ public class ChatRoomUserService {
         // 웹소켓에 대화방아이디 등록
         chatHandler.putRoomIdSession(session, room.getId());
 
-        // Kafka Topic 에 구독자 추가
-        String topicName = TOPIC + room.getId();
-        NewTopic newTopic = new NewTopic(topicName, 1, (short) 1);
-        kafkaTemplate.send(newTopic.name(), "Subscribed");
+        // Kafka Topic 키(roomId)에 구독자 추가
+        producers.produceMessage(room.getId(), "Subscribed");
 
         // 요청받는 유저에게 대화 요청 알림 생성
         String message = String.format("%s 님이 %s 님에게 %s",
@@ -147,9 +142,8 @@ public class ChatRoomUserService {
         // 웹소켓에 등록된 대화방아이디 세션리스트에 세션 추가
         chatHandler.putRoomIdSession(session, room.getId());
 
-        // Kafka Topic 에 구독자 추가
-        String topicName = TOPIC + room.getId();
-        kafkaTemplate.send(topicName, "Subscribed");
+        // Kafka Topic 키(roomId)에 구독자 추가
+        producers.produceMessage(room.getId(), "Subscribed");
 
         // 대화 요청 알림 삭제
         notificationService.delete(notificationId);
@@ -185,8 +179,8 @@ public class ChatRoomUserService {
         // 웹소켓에 등록된 대화방아이디 삭제
         chatHandler.deleteRoomId(room.getId());
 
-        // 요청시 생성된 kafka topic 삭제
-        kafkaTopicService.deleteTopic(TOPIC + room.getId());
+        // 요청시 생성된 kafka topic 키(roomId) 구독 취소 메세지 남김.
+        producers.produceMessage(room.getId(), "Unsubscribed");
 
         // 요청자에게 요청 거절 알림 생성
         String message = String.format("%s 님이 %s 님의 %s",
@@ -247,12 +241,12 @@ public class ChatRoomUserService {
 
         chatRoomUserRepository.delete(chatRoomUser);
 
-        // 대화방에 모두 나가기 한 경우 방, 메세지, 카프카 토픽 삭제
+        // 대화방에 모두 나가기 한 경우 방, 메세지, kafka 키(roomId) 구독 취소 메세지 남김.
         if (room.getChatRoomUsers().size() == 0) {
             // 대화 메시지 삭제 로직 추가
             chatMessageRepository.deleteByChatRoom(room);
             chatRoomRepository.delete(room);
-            kafkaTopicService.deleteTopic(TOPIC + roomId);
+            producers.produceMessage(room.getId(), "Unsubscribed");
         }
     }
 }

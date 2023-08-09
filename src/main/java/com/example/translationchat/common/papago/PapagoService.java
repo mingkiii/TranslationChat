@@ -1,4 +1,4 @@
-package com.example.translationchat.common.util;
+package com.example.translationchat.common.papago;
 
 import com.example.translationchat.client.domain.type.Language;
 import com.google.gson.Gson;
@@ -18,13 +18,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class PapagoUtil {
+public class PapagoService {
     @Value("${papa go.client-id}")
     private String clientId;
     @Value("${papa go.client-secret}")
     private String clientSecret;
-
-    private String API_URL = "https://openapi.naver.com/v1/papago/n2mt";
 
     public String getTransSentence(String message, Language language, Language transLanguage) {
         String text;
@@ -34,8 +32,8 @@ public class PapagoUtil {
         requestHeaders.put("X-Naver-Client-Id", clientId);
         requestHeaders.put("X-Naver-Client-Secret", clientSecret);
 
+        String API_URL = "https://openapi.naver.com/v1/papago/n2mt";
         String responseBody = post(API_URL, requestHeaders, text, language, transLanguage);
-        System.out.println("responseBody = " + responseBody);
 
         return convertToData(responseBody);
     }
@@ -100,10 +98,7 @@ public class PapagoUtil {
         Gson gson = new Gson();
         JsonResponse response = gson.fromJson(responseBody, JsonResponse.class);
 
-        String translatedText = response.getMessage().getResult().getTranslatedText();
-        System.out.println(translatedText);
-
-        return translatedText;
+        return response.getMessage().getResult().getTranslatedText();
     }
 
     private static class JsonResponse {

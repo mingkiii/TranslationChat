@@ -18,7 +18,8 @@ public class Producers {
     private String topicName;
 
     public void produceMessage(Long roomId, String payload) {
-        logger.info("Topic : '{}' to Payload : '{}'", topicName + roomId, payload);
-        kafkaTemplate.send(topicName + roomId, payload);
+        String key = roomId.toString();
+        logger.info("Topic : '{}' Key : '{}' Payload : '{}'", topicName, roomId, payload);
+        kafkaTemplate.send(topicName, key, payload);
     }
 }

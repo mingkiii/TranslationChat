@@ -1,4 +1,4 @@
-package com.example.translationchat.common.util;
+package com.example.translationchat.common.papago;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -13,10 +13,10 @@ import org.springframework.test.context.TestPropertySource;
     "papa go.client-id=${CLIENT_ID}",
     "papa go.client-secret=${CLIENT_SECRET}"
 })
-class PapagoUtilTest {
+class PapagoServiceTest {
 
     @Autowired
-    private PapagoUtil papagoUtil;
+    private PapagoService papagoService;
 
     @Test
     public void testGetTransSentence(){
@@ -24,7 +24,7 @@ class PapagoUtilTest {
         Language language = Language.ko;
         Language transLanguage = Language.en;
 
-        String translatedText = papagoUtil.getTransSentence(message, language, transLanguage);
+        String translatedText = papagoService.getTransSentence(message, language, transLanguage);
 
         // You can add assertions to verify the translated text
         assertEquals("Hello", translatedText);

@@ -28,7 +28,7 @@ import com.example.translationchat.client.domain.type.ActiveStatus;
 import com.example.translationchat.client.domain.type.ContentType;
 import com.example.translationchat.client.service.NotificationService;
 import com.example.translationchat.common.exception.CustomException;
-import com.example.translationchat.common.kafka.service.KafkaTopicService;
+import com.example.translationchat.common.kafka.Producers;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
 import com.example.translationchat.server.handler.ChatHandler;
 import java.util.Optional;
@@ -37,7 +37,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.socket.WebSocketSession;
@@ -61,10 +60,7 @@ class ChatRoomUserServiceTest {
     private ChatRoomRepository roomRepository;
 
     @Mock
-    private KafkaTemplate<String, String> kafkaTemplate;
-
-    @Mock
-    private KafkaTopicService kafkaTopicService;
+    private Producers producers;
 
     @Mock
     private ChatHandler chatHandler;
@@ -109,7 +105,7 @@ class ChatRoomUserServiceTest {
         chatRoomUserService.request(createMockAuthentication(sender), session,2L);
 
         // then
-        verify(kafkaTemplate, times(1)).send(anyString(), anyString());
+        verify(producers, times(1)).produceMessage(anyLong(), anyString());
         verify(notificationService).create(any(NotificationForm.class), anyString());
         verify(chatHandler, times(1)).putRoomIdSession(session, room.getId());
     }
@@ -314,7 +310,7 @@ class ChatRoomUserServiceTest {
         chatRoomUserService.accept(createMockAuthentication(user), session,1L);
         //then
         verify(chatHandler, times(1)).putRoomIdSession(session, room.getId());
-        verify(kafkaTemplate, times(1)).send(anyString(), anyString());
+        verify(producers, times(1)).produceMessage(anyLong(), anyString());
         verify(notificationService, times(1)).delete(anyLong());
     }
 
@@ -353,7 +349,6 @@ class ChatRoomUserServiceTest {
         verify(notificationService, times(1)).delete(anyLong());
         verify(roomRepository, times(1)).delete(room);
         verify(notificationService, times(1)).create(any(NotificationForm.class), anyString());
-        verify(kafkaTopicService, times(1)).deleteTopic(anyString());
     }
 
     private Authentication createMockAuthentication(User user) {
