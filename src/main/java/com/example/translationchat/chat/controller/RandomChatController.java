@@ -22,7 +22,7 @@ public class RandomChatController {
     // 랜덤 채팅 시작 -> 매칭 후 방 생성
     @PostMapping("/room/join")
     public void joinRoom(Authentication authentication) {
-        randomChatService.joinQueue(authentication);
+        randomChatService.joinRandomChat(authentication);
     }
 
     // 방 나가기 -> 상대에게 안내메세지 보내고, 방 삭제

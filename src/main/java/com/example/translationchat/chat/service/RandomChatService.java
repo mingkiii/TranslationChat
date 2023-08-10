@@ -4,6 +4,7 @@ import static com.example.translationchat.common.exception.ErrorCode.ALREADY_RAN
 import static com.example.translationchat.common.exception.ErrorCode.LOCK_FAILED;
 import static com.example.translationchat.common.exception.ErrorCode.NOT_EXIST_CLIENT;
 import static com.example.translationchat.common.exception.ErrorCode.NOT_INVALID_ROOM;
+import static com.example.translationchat.common.exception.ErrorCode.RANDOM_CHAT_UNAVAILABLE_STATUS;
 
 import com.example.translationchat.chat.domain.model.RandomChatRoom;
 import com.example.translationchat.chat.domain.repository.RandomChatRoomRepository;
@@ -12,6 +13,7 @@ import com.example.translationchat.client.domain.model.User;
 import com.example.translationchat.client.domain.type.ActiveStatus;
 import com.example.translationchat.client.domain.type.Language;
 import com.example.translationchat.client.service.NotificationService;
+import com.example.translationchat.client.service.ReportService;
 import com.example.translationchat.common.exception.CustomException;
 import com.example.translationchat.common.papago.PapagoService;
 import com.example.translationchat.common.redis.util.RedisLockUtil;
@@ -36,14 +38,23 @@ public class RandomChatService {
     private final RandomChatRoomRepository randomChatRoomRepository;
     private final NotificationService notificationService;
     private final PapagoService papagoService;
+    private final ReportService reportService;
 
     private final RedisLockUtil redisLockUtil;
     private final String LOCK_KEY = "QUEUE_LOCK";
     private final Queue<User> queue = new LinkedList<>();
 
     @Transactional
-    public void joinQueue(Authentication authentication) {
+    public void joinRandomChat(Authentication authentication) {
         User user = getUser(authentication);
+
+        // 랜덤 채팅 이용 불가 상태 체크
+        if (!user.isRandomApproval()) {
+            // 이용 정지 기간 지났는지 확인
+            if (!reportService.isReportDateOlderThanAWeek(user)) {
+                throw new CustomException(RANDOM_CHAT_UNAVAILABLE_STATUS);
+            }
+        }
 
         // 이미 참여한 방이 있는지 확인
         if (randomChatRoomRepository.existsByJoinUser1OrJoinUser2(user, user)) {

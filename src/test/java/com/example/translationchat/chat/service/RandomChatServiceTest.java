@@ -1,6 +1,7 @@
 package com.example.translationchat.chat.service;
 
 import static com.example.translationchat.common.exception.ErrorCode.ALREADY_RANDOM_CHAT_ROOM;
+import static com.example.translationchat.common.exception.ErrorCode.RANDOM_CHAT_UNAVAILABLE_STATUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -18,6 +19,7 @@ import com.example.translationchat.client.domain.model.User;
 import com.example.translationchat.client.domain.type.ActiveStatus;
 import com.example.translationchat.client.domain.type.Language;
 import com.example.translationchat.client.service.NotificationService;
+import com.example.translationchat.client.service.ReportService;
 import com.example.translationchat.common.exception.CustomException;
 import com.example.translationchat.common.papago.PapagoService;
 import com.example.translationchat.common.redis.util.RedisLockUtil;
@@ -54,31 +56,54 @@ public class RandomChatServiceTest {
     @Mock
     private NotificationService notificationService;
 
+    @Mock
+    private ReportService reportService;
+
     @Test
-    @DisplayName("랜덤채팅방 탐색 후 참여 - 성공")
-    public void testJoinQueue() {
+    @DisplayName("랜덤채팅방 매칭 후 참여 - 성공")
+    public void testJoinRandomChat() {
         //given
         User user1 = User.builder()
             .id(1L)
             .name("user")
             .status(ActiveStatus.ONLINE)
+            .randomApproval(true)
             .build();
         User user2 = User.builder()
             .id(1L)
             .name("user")
+            .randomApproval(true)
             .status(ActiveStatus.ONLINE)
             .build();
 
         when(randomChatRoomRepository.existsByJoinUser1OrJoinUser2(any(User.class), any(User.class))).thenReturn(false);
         when(redisLockUtil.getLock(anyString(), anyLong())).thenReturn(true);
         //when
-        randomChatService.joinQueue(createMockAuthentication(user1));
-        randomChatService.joinQueue(createMockAuthentication(user2));
+        randomChatService.joinRandomChat(createMockAuthentication(user1));
+        randomChatService.joinRandomChat(createMockAuthentication(user2));
         //then
         verify(redisLockUtil, times(6)).getLock(anyString(), anyLong());
         verify(redisLockUtil, times(6)).unLock(anyString());
         verify(randomChatRoomRepository, times(1)).save(any(RandomChatRoom.class));
     }
+
+    @Test
+    @DisplayName("랜덤채팅방 탐색 후 참여 - 실패_랜덤 채팅 이용 불가 상태")
+    public void testJoinRandomChat_Fail_RANDOM_CHAT_UNAVAILABLE_STATUS() {
+        //given
+        User user = User.builder()
+            .id(1L)
+            .name("user")
+            .randomApproval(false)
+            .build();
+        when(reportService.isReportDateOlderThanAWeek(user)).thenReturn(false);
+        //when
+        CustomException exception = assertThrows(CustomException.class,
+            () -> randomChatService.joinRandomChat(createMockAuthentication(user)));
+        //then
+        assertEquals(RANDOM_CHAT_UNAVAILABLE_STATUS, exception.getErrorCode());
+    }
+
     @Test
     @DisplayName("랜덤채팅방 탐색 후 참여 - 실패_이미 랜덤 채팅 참여 상태")
     public void testJoinRandomChat_Fail_ALREADY_RANDOM_CHAT_ROOM() {
@@ -86,11 +111,12 @@ public class RandomChatServiceTest {
         User user = User.builder()
             .id(1L)
             .name("user")
+            .randomApproval(true)
             .build();
         when(randomChatRoomRepository.existsByJoinUser1OrJoinUser2(user, user)).thenReturn(true);
         //when
         CustomException exception = assertThrows(CustomException.class,
-            () -> randomChatService.joinQueue(createMockAuthentication(user)));
+            () -> randomChatService.joinRandomChat(createMockAuthentication(user)));
         //then
         assertEquals(ALREADY_RANDOM_CHAT_ROOM, exception.getErrorCode());
     }
