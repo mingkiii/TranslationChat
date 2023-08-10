@@ -3,13 +3,13 @@ package com.example.translationchat.chat.service;
 import static com.example.translationchat.common.exception.ErrorCode.ALREADY_RANDOM_CHAT_ROOM;
 import static com.example.translationchat.common.exception.ErrorCode.LOCK_FAILED;
 import static com.example.translationchat.common.exception.ErrorCode.NOT_EXIST_CLIENT;
-import static com.example.translationchat.common.exception.ErrorCode.NOT_FOUND_RANDOM_CHAT_ROOM;
 import static com.example.translationchat.common.exception.ErrorCode.NOT_INVALID_ROOM;
 
-import com.example.translationchat.chat.domain.request.RandomChatMessageRequest;
 import com.example.translationchat.chat.domain.model.RandomChatRoom;
 import com.example.translationchat.chat.domain.repository.RandomChatRoomRepository;
+import com.example.translationchat.chat.domain.request.RandomChatMessageRequest;
 import com.example.translationchat.client.domain.model.User;
+import com.example.translationchat.client.domain.type.ActiveStatus;
 import com.example.translationchat.client.domain.type.Language;
 import com.example.translationchat.client.service.NotificationService;
 import com.example.translationchat.common.exception.CustomException;
@@ -17,11 +17,13 @@ import com.example.translationchat.common.papago.PapagoService;
 import com.example.translationchat.common.redis.util.RedisLockUtil;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Queue;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,79 +34,84 @@ public class RandomChatService {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final RandomChatRoomRepository randomChatRoomRepository;
-    private final RedisLockUtil redisLockUtil;
     private final NotificationService notificationService;
     private final PapagoService papagoService;
 
-    private final String KEY = "RANDOM_CHAT_ROOM";
+    private final RedisLockUtil redisLockUtil;
+    private final String LOCK_KEY = "QUEUE_LOCK";
+    private final Queue<User> queue = new LinkedList<>();
 
     @Transactional
-    public String createRoom(Authentication authentication) {
-        User user = getUser(authentication);
-        // 락 : 방 탐색 키랑 동일
-        try {
-            boolean roomLocked = redisLockUtil.getLock(KEY, 5);
-            if (roomLocked) {
-                randomChatRoomRepository.save(RandomChatRoom.builder()
-                    .createUser(user)
-                    .createdTime(Instant.now())
-                    .build());
-                return "새로운 랜덤 채팅방을 생성하였습니다.";
-            } else {
-                throw new CustomException(LOCK_FAILED);
-            }
-        } catch (Exception e) {
-            redisLockUtil.unLock(KEY);
-            throw e;
-        } finally {
-            redisLockUtil.unLock(KEY);
-        }
-    }
-
-    @Transactional
-    public void joinRandomChat(Authentication authentication) {
+    public void joinQueue(Authentication authentication) {
         User user = getUser(authentication);
 
         // 이미 참여한 방이 있는지 확인
-        if (randomChatRoomRepository.existsByCreateUserOrJoinUser(user, user)) {
+        if (randomChatRoomRepository.existsByJoinUser1OrJoinUser2(user, user)) {
             throw new CustomException(ALREADY_RANDOM_CHAT_ROOM);
         }
-        // 참여 가능한 방이 있는지 탐색( 락 : 방 생성 키랑 동일)
+
         try {
-            boolean roomLocked = redisLockUtil.getLock(KEY, 5);
-            if (roomLocked) {
-                RandomChatRoom randomChatRoom = randomChatRoomRepository.findFirstByJoinUserIsNull()
-                    .orElseThrow(() -> new CustomException(NOT_FOUND_RANDOM_CHAT_ROOM));
-                randomChatRoom.setJoinUser(user);
-                randomChatRoomRepository.save(randomChatRoom);
+            boolean locked = redisLockUtil.getLock(LOCK_KEY, 5);
+            if (locked) {
+                queue.add(user);
             } else {
                 throw new CustomException(LOCK_FAILED);
             }
-        } catch (Exception e) {
-            redisLockUtil.unLock(KEY);
-            throw e;
         } finally {
-            redisLockUtil.unLock(KEY);
+            redisLockUtil.unLock(LOCK_KEY);
         }
+
+        tryMatchAndCreateChatRoom();
     }
 
-    @Scheduled(fixedDelay = 60000) // 1분마다 실행
-    public void checkEmptyRooms() {
-        Instant fiveMinutesAgo = Instant.now().minus(5, ChronoUnit.MINUTES);
-        List<RandomChatRoom> emptyRooms = randomChatRoomRepository.findByJoinUserIsNullAndCreatedTimeBefore(fiveMinutesAgo);
+    @Transactional
+    public void tryMatchAndCreateChatRoom() {
+        List<User> matchedUsers = new ArrayList<>();
 
-        if (emptyRooms != null && !emptyRooms.isEmpty()) {
-            for (RandomChatRoom room : emptyRooms) {
-                // 방 삭제 로직
-                User createUser = room.getCreateUser();
-                randomChatRoomRepository.delete(room);
-
-                // 클라이언트에게 메시지 전송
-                notificationService.sendNotificationMessage(
-                    createUser.getId(), "5분동안 참여자가 없어 랜덤 채팅방이 삭제되었습니다.");
+        // 매칭할 사용자들 선택
+        // 큐가 비었다면 다른 유저에 의해 매칭된 경우
+        while (!queue.isEmpty() && matchedUsers.size() < 2) {
+            User user;
+            try {
+                boolean locked = redisLockUtil.getLock(LOCK_KEY, 5);
+                if (locked) {
+                    user = queue.poll();
+                } else {
+                    throw new CustomException(LOCK_FAILED);
+                }
+            } finally {
+                redisLockUtil.unLock(LOCK_KEY);
+            }
+            // 사용자가 온라인 상태인 경우에만 매칭 대상에 추가
+            if (Objects.requireNonNull(user).getStatus() == ActiveStatus.ONLINE) {
+                matchedUsers.add(user);
             }
         }
 
+        if (matchedUsers.size() == 2) {
+            createChatRoom(matchedUsers.get(0), matchedUsers.get(1));
+        } else if (matchedUsers.size() == 1) {
+            // 매칭 실패한 경우 큐에 다시 넣음
+            try {
+                boolean locked = redisLockUtil.getLock(LOCK_KEY, 5);
+                if (locked) {
+                    queue.add(matchedUsers.get(0));
+                } else {
+                    throw new CustomException(LOCK_FAILED);
+                }
+            } finally {
+                redisLockUtil.unLock(LOCK_KEY);
+            }
+        }
+    }
+
+    @Transactional
+    public void createChatRoom(User user1, User user2) {
+        randomChatRoomRepository.save(RandomChatRoom.builder()
+            .joinUser1(user1)
+            .joinUser2(user2)
+            .createdTime(Instant.now())
+            .build());
     }
 
     // 누구라도 나가면 방 삭제
@@ -115,7 +122,7 @@ public class RandomChatService {
         RandomChatRoom room = randomChatRoomRepository.findById(roomId)
             .orElseThrow(() -> new CustomException(NOT_INVALID_ROOM));
 
-        User otherUser = (room.getCreateUser() == user) ? room.getJoinUser() : room.getCreateUser();
+        User otherUser = (room.getJoinUser1() == user) ? room.getJoinUser2() : room.getJoinUser1();
 
         if (otherUser != null) {
             notificationService.sendNotificationMessage(otherUser.getId(), "상대방이 방을 나갔습니다.");
@@ -130,7 +137,7 @@ public class RandomChatService {
         RandomChatRoom room = randomChatRoomRepository.findById(roomId)
             .orElseThrow(() -> new CustomException(NOT_INVALID_ROOM));
 
-        User otherUser = (room.getCreateUser() == user) ? room.getJoinUser() : room.getCreateUser();
+        User otherUser = (room.getJoinUser1() == user) ? room.getJoinUser2() : room.getJoinUser1();
         if (otherUser == null) {
             throw new CustomException(NOT_EXIST_CLIENT);
         }

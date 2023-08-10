@@ -27,12 +27,12 @@ public class RandomChatRoom {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "create_user_id")
-    private User createUser;
+    @JoinColumn(name = "join_user1_id")
+    private User joinUser1;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "join_user_id")
-    private User joinUser;
+    @JoinColumn(name = "join_user2_id")
+    private User joinUser2;
 
     private Instant createdTime;
 }
