@@ -83,7 +83,7 @@ public class ChatRoomUserService {
     }
 
     private void isOnline(User user) {
-        if (ActiveStatus.ONLINE != user.getStatus()) {
+        if (ActiveStatus.OFFLINE == user.getStatus()) {
             throw new CustomException(OFFLINE_USER);
         }
     }

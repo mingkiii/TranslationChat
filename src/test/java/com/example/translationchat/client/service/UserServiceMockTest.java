@@ -24,7 +24,7 @@ import com.example.translationchat.client.domain.repository.UserRepository;
 import com.example.translationchat.client.domain.type.Language;
 import com.example.translationchat.client.domain.type.Nationality;
 import com.example.translationchat.common.exception.CustomException;
-import com.example.translationchat.common.redis.util.RedisLockUtil;
+import com.example.translationchat.common.redis.util.RedisService;
 import com.example.translationchat.common.security.JwtAuthenticationProvider;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
 import java.util.Arrays;
@@ -49,7 +49,7 @@ public class UserServiceMockTest {
     @Mock
     private JwtAuthenticationProvider provider;
     @Mock
-    private RedisLockUtil redisLockUtil;
+    private RedisService redisLockUtil;
     @Mock
     private PasswordEncoder passwordEncoder;
     @Mock

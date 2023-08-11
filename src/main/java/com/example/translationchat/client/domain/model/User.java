@@ -56,6 +56,8 @@ public class User extends BaseEntity{
     @Enumerated(EnumType.STRING)
     private ActiveStatus status;
 
+    private  int warningCount;
+
     @Column
     private boolean randomApproval;
 
