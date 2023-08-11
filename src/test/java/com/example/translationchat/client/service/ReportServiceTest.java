@@ -17,7 +17,7 @@ import com.example.translationchat.client.domain.model.User;
 import com.example.translationchat.client.domain.repository.ReportRepository;
 import com.example.translationchat.client.domain.repository.UserRepository;
 import com.example.translationchat.common.exception.CustomException;
-import com.example.translationchat.common.redis.util.RedisLockUtil;
+import com.example.translationchat.common.redis.util.RedisService;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
 import java.time.Duration;
 import java.time.Instant;
@@ -41,7 +41,7 @@ public class ReportServiceTest {
     @Mock
     ReportRepository reportRepository;
     @Mock
-    private RedisLockUtil redisLockUtil;
+    private RedisService redisLockUtil;
     @Mock
     private NotificationService notificationService;
 

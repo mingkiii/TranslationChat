@@ -22,7 +22,7 @@ import com.example.translationchat.client.service.NotificationService;
 import com.example.translationchat.client.service.ReportService;
 import com.example.translationchat.common.exception.CustomException;
 import com.example.translationchat.common.papago.PapagoService;
-import com.example.translationchat.common.redis.util.RedisLockUtil;
+import com.example.translationchat.common.redis.util.RedisService;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -48,7 +48,7 @@ public class RandomChatServiceTest {
     private RandomChatRoomRepository randomChatRoomRepository;
 
     @Mock
-    private RedisLockUtil redisLockUtil;
+    private RedisService redisService;
 
     @Mock
     private PapagoService papagoService;
@@ -75,15 +75,17 @@ public class RandomChatServiceTest {
             .randomApproval(true)
             .status(ActiveStatus.ONLINE)
             .build();
+        String key = "random_chat_queue";
 
         when(randomChatRoomRepository.existsByJoinUser1OrJoinUser2(any(User.class), any(User.class))).thenReturn(false);
-        when(redisLockUtil.getLock(anyString(), anyLong())).thenReturn(true);
+        when(redisService.getLock(anyString(), anyLong())).thenReturn(true);
+        when(redisService.pop(key)).thenReturn(user1);
+        when(redisService.pop(key)).thenReturn(user2);
         //when
         randomChatService.joinRandomChat(createMockAuthentication(user1));
-        randomChatService.joinRandomChat(createMockAuthentication(user2));
         //then
-        verify(redisLockUtil, times(6)).getLock(anyString(), anyLong());
-        verify(redisLockUtil, times(6)).unLock(anyString());
+        verify(redisService, times(3)).getLock(anyString(), anyLong());
+        verify(redisService, times(3)).unLock(anyString());
         verify(randomChatRoomRepository, times(1)).save(any(RandomChatRoom.class));
     }
 

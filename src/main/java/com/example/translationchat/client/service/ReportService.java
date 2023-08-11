@@ -10,7 +10,7 @@ import com.example.translationchat.client.domain.model.User;
 import com.example.translationchat.client.domain.repository.ReportRepository;
 import com.example.translationchat.client.domain.repository.UserRepository;
 import com.example.translationchat.common.exception.CustomException;
-import com.example.translationchat.common.redis.util.RedisLockUtil;
+import com.example.translationchat.common.redis.util.RedisService;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
 import java.time.Duration;
 import java.time.Instant;
@@ -26,7 +26,7 @@ public class ReportService {
 
     private final UserRepository userRepository;
     private final ReportRepository reportRepository;
-    private final RedisLockUtil redisLockUtil;
+    private final RedisService redisLockUtil;
     private final NotificationService notificationService;
 
     @Transactional

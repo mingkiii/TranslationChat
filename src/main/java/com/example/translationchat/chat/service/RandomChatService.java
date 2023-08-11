@@ -16,14 +16,11 @@ import com.example.translationchat.client.service.NotificationService;
 import com.example.translationchat.client.service.ReportService;
 import com.example.translationchat.common.exception.CustomException;
 import com.example.translationchat.common.papago.PapagoService;
-import com.example.translationchat.common.redis.util.RedisLockUtil;
+import com.example.translationchat.common.redis.util.RedisService;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
-import java.util.Queue;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
@@ -39,10 +36,10 @@ public class RandomChatService {
     private final NotificationService notificationService;
     private final PapagoService papagoService;
     private final ReportService reportService;
+    private final RedisService redisService;
 
-    private final RedisLockUtil redisLockUtil;
     private final String LOCK_KEY = "QUEUE_LOCK";
-    private final Queue<User> queue = new LinkedList<>();
+    private final String QUEUE_KEY = "random_chat_queue";
 
     @Transactional
     public void joinRandomChat(Authentication authentication) {
@@ -62,14 +59,15 @@ public class RandomChatService {
         }
 
         try {
-            boolean locked = redisLockUtil.getLock(LOCK_KEY, 5);
+            boolean locked = redisService.getLock(LOCK_KEY, 5);
             if (locked) {
-                queue.add(user);
+                // Redis 를 이용하여 큐에 사용자 추가
+                redisService.push(QUEUE_KEY, user);
             } else {
                 throw new CustomException(LOCK_FAILED);
             }
         } finally {
-            redisLockUtil.unLock(LOCK_KEY);
+            redisService.unLock(LOCK_KEY);
         }
 
         tryMatchAndCreateChatRoom();
@@ -80,22 +78,24 @@ public class RandomChatService {
         List<User> matchedUsers = new ArrayList<>();
 
         // 매칭할 사용자들 선택
-        // 큐가 비었다면 다른 유저에 의해 매칭된 경우
-        while (!queue.isEmpty() && matchedUsers.size() < 2) {
-            User user;
+        while (matchedUsers.size() < 2) {
             try {
-                boolean locked = redisLockUtil.getLock(LOCK_KEY, 5);
+                boolean locked = redisService.getLock(LOCK_KEY, 5);
                 if (locked) {
-                    user = queue.poll();
+                    // Redis 를 이용하여 큐에서 사용자 제거
+                    User user = redisService.pop(QUEUE_KEY);
+                    if (user == null) {
+                        break; // 큐가 비었다면 종료. 다른 유저에 의해 매칭된 경우
+                    }
+                    // 사용자가 온라인 상태인 경우에만 매칭 대상에 추가
+                    if (user.getStatus() == ActiveStatus.ONLINE) {
+                        matchedUsers.add(user);
+                    }
                 } else {
                     throw new CustomException(LOCK_FAILED);
                 }
             } finally {
-                redisLockUtil.unLock(LOCK_KEY);
-            }
-            // 사용자가 온라인 상태인 경우에만 매칭 대상에 추가
-            if (Objects.requireNonNull(user).getStatus() == ActiveStatus.ONLINE) {
-                matchedUsers.add(user);
+                redisService.unLock(LOCK_KEY);
             }
         }
 
@@ -104,14 +104,14 @@ public class RandomChatService {
         } else if (matchedUsers.size() == 1) {
             // 매칭 실패한 경우 큐에 다시 넣음
             try {
-                boolean locked = redisLockUtil.getLock(LOCK_KEY, 5);
+                boolean locked = redisService.getLock(LOCK_KEY, 5);
                 if (locked) {
-                    queue.add(matchedUsers.get(0));
+                    redisService.push(QUEUE_KEY, matchedUsers.get(0));
                 } else {
                     throw new CustomException(LOCK_FAILED);
                 }
             } finally {
-                redisLockUtil.unLock(LOCK_KEY);
+                redisService.unLock(LOCK_KEY);
             }
         }
     }

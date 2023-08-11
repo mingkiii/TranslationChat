@@ -17,7 +17,7 @@ import com.example.translationchat.client.domain.type.ActiveStatus;
 import com.example.translationchat.client.domain.type.Language;
 import com.example.translationchat.client.domain.type.Nationality;
 import com.example.translationchat.common.exception.CustomException;
-import com.example.translationchat.common.redis.util.RedisLockUtil;
+import com.example.translationchat.common.redis.util.RedisService;
 import com.example.translationchat.common.security.JwtAuthenticationProvider;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
 import java.util.List;
@@ -37,7 +37,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final RedisLockUtil redisLockUtil;
+    private final RedisService redisLockUtil;
     private final JwtAuthenticationProvider provider;
     private final AuthenticationManager authenticationManager;
 

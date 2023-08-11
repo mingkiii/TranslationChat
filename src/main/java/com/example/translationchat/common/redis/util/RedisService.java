@@ -1,5 +1,6 @@
 package com.example.translationchat.common.redis.util;
 
+import com.example.translationchat.client.domain.model.User;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -8,8 +9,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class RedisLockUtil {
+public class RedisService {
     private final RedisTemplate<String, String> redisTemplate;
+    private final RedisTemplate<String, User> userRedisTemplate;
 
     public boolean getLock(String key, long timeoutInSeconds) {
         ValueOperations<String, String> ops = redisTemplate.opsForValue();
@@ -19,5 +21,13 @@ public class RedisLockUtil {
 
     public void unLock(String key) {
         redisTemplate.delete(key);
+    }
+
+    public void push(String key, User user) {
+        userRedisTemplate.opsForList().leftPush(key, user);
+    }
+
+    public User pop(String key) {
+        return userRedisTemplate.opsForList().rightPop(key);
     }
 }

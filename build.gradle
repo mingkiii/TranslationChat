@@ -49,10 +49,8 @@ dependencies {
 
     implementation 'com.auth0:java-jwt:4.2.0'
 
-    // redis, redisson
+    // redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    implementation 'org.springframework.session:spring-session-data-redis'
-    implementation 'org.redisson:redisson-spring-boot-starter:3.17.7'
 
     // kafka
     implementation 'org.springframework.kafka:spring-kafka'
