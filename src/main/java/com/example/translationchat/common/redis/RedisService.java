@@ -1,4 +1,4 @@
-package com.example.translationchat.common.redis.util;
+package com.example.translationchat.common.redis;
 
 import com.example.translationchat.client.domain.model.User;
 import java.util.concurrent.TimeUnit;
