@@ -29,14 +29,14 @@ public class Report {
     @JoinColumn(name = "reported_user_id")
     private User reportedUser;
 
-    private Long reporterId;
+    private Long reporterUserId;
 
     private Instant reportTime;
 
     public static Report create(User target, Long reporterId) {
         return Report.builder()
             .reportedUser(target)
-            .reporterId(reporterId)
+            .reporterUserId(reporterId)
             .reportTime(Instant.now())
             .build();
     }

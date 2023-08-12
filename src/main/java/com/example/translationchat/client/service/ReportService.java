@@ -10,7 +10,7 @@ import com.example.translationchat.client.domain.model.User;
 import com.example.translationchat.client.domain.repository.ReportRepository;
 import com.example.translationchat.client.domain.repository.UserRepository;
 import com.example.translationchat.common.exception.CustomException;
-import com.example.translationchat.common.redis.util.RedisService;
+import com.example.translationchat.common.redis.RedisService;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
 import java.time.Duration;
 import java.time.Instant;
@@ -87,7 +87,7 @@ public class ReportService {
             throw new CustomException(ALREADY_RANDOM_CHAT_UNAVAILABLE);
         }
         Optional<Report> optionalReport =
-            reportRepository.findTopByReportedUserAndReporterIdOrderByReportTimeDesc(target, userId);
+            reportRepository.findTopByReportedUserAndReporterUserIdOrderByReportTimeDesc(target, userId);
         if (optionalReport.isPresent()) {
             Instant baseDate = Instant.now().minus(Duration.ofDays(30));
             Instant lastReportDate = optionalReport.get().getReportTime();

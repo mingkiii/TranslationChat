@@ -22,7 +22,7 @@ import com.example.translationchat.client.service.NotificationService;
 import com.example.translationchat.client.service.ReportService;
 import com.example.translationchat.common.exception.CustomException;
 import com.example.translationchat.common.papago.PapagoService;
-import com.example.translationchat.common.redis.util.RedisService;
+import com.example.translationchat.common.redis.RedisService;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;

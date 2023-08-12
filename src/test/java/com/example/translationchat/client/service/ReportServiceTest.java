@@ -17,7 +17,7 @@ import com.example.translationchat.client.domain.model.User;
 import com.example.translationchat.client.domain.repository.ReportRepository;
 import com.example.translationchat.client.domain.repository.UserRepository;
 import com.example.translationchat.common.exception.CustomException;
-import com.example.translationchat.common.redis.util.RedisService;
+import com.example.translationchat.common.redis.RedisService;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
 import java.time.Duration;
 import java.time.Instant;
@@ -60,7 +60,7 @@ public class ReportServiceTest {
             .build();
 
         when(userRepository.findById(5L)).thenReturn(Optional.of(target));
-        when(reportRepository.findTopByReportedUserAndReporterIdOrderByReportTimeDesc(target, 1L))
+        when(reportRepository.findTopByReportedUserAndReporterUserIdOrderByReportTimeDesc(target, 1L))
             .thenReturn(Optional.empty());
         when(redisLockUtil.getLock(anyString(), anyLong())).thenReturn(true);
         //when
@@ -108,12 +108,12 @@ public class ReportServiceTest {
         Instant reportTime = Instant.now().minus(Duration.ofDays(15));
         Report report = Report.builder()
             .reportedUser(target)
-            .reporterId(user.getId())
+            .reporterUserId(user.getId())
             .reportTime(reportTime)
             .build();
 
         when(userRepository.findById(5L)).thenReturn(Optional.of(target));
-        when(reportRepository.findTopByReportedUserAndReporterIdOrderByReportTimeDesc(
+        when(reportRepository.findTopByReportedUserAndReporterUserIdOrderByReportTimeDesc(
             eq(target), eq(1L))).thenReturn(Optional.of(report));
         //when
         CustomException exception = assertThrows(CustomException.class,
