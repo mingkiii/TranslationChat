@@ -1,5 +1,6 @@
 package com.example.translationchat.client.domain.model;
 
+import com.example.translationchat.client.domain.form.NotificationForm;
 import com.example.translationchat.client.domain.type.ContentType;
 import com.example.translationchat.common.model.BaseEntity;
 import javax.persistence.Column;
@@ -43,4 +44,13 @@ public class Notification extends BaseEntity{
     @Column
     @Enumerated(EnumType.STRING)
     private ContentType content;
+
+    public static Notification from(NotificationForm form) {
+        return Notification.builder()
+            .user(form.getUser())
+            .args(form.getArgs())
+            .roomId(form.getRoomId())
+            .content(form.getContentType())
+            .build();
+    }
 }

@@ -41,6 +41,10 @@ public class UserService {
     private final JwtAuthenticationProvider provider;
     private final AuthenticationManager authenticationManager;
 
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+            .orElseThrow(() -> new CustomException(NOT_FOUND_USER));
+    }
     // 회원 가입
     @Transactional
     public String signUp(SignUpForm form) {
