@@ -1,7 +1,7 @@
 package com.example.translationchat.chat.controller;
 
 import com.example.translationchat.chat.domain.request.RandomChatMessageRequest;
-import com.example.translationchat.chat.service.RandomChatService;
+import com.example.translationchat.domain.chat.service.RandomChatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;

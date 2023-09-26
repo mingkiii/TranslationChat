@@ -1,7 +1,7 @@
 package com.example.translationchat.chat.controller;
 
 import com.example.translationchat.chat.domain.request.ChatMessageRequest;
-import com.example.translationchat.chat.service.ChatMessageService;
+import com.example.translationchat.domain.chat.service.ChatMessageService;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;

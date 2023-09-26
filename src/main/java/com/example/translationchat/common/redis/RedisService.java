@@ -1,6 +1,6 @@
 package com.example.translationchat.common.redis;
 
-import com.example.translationchat.client.domain.model.User;
+import com.example.translationchat.domain.user.entity.User;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;

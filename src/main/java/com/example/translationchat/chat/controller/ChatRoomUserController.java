@@ -1,7 +1,7 @@
 package com.example.translationchat.chat.controller;
 
 import com.example.translationchat.chat.domain.dto.ChatRoomDto;
-import com.example.translationchat.chat.service.ChatRoomUserService;
+import com.example.translationchat.domain.chat.service.ChatRoomUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.socket.WebSocketSession;
 
 @RestController
-@RequestMapping("/v1/chat")
+@RequestMapping("/api/chat")
 @RequiredArgsConstructor
 public class ChatRoomUserController {
 

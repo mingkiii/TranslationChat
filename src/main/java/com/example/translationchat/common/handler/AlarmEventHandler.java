@@ -1,7 +1,7 @@
 package com.example.translationchat.common.handler;
 
-import com.example.translationchat.client.domain.form.NotificationForm;
-import com.example.translationchat.client.service.NotificationService;
+import com.example.translationchat.domain.notification.form.NotificationForm;
+import com.example.translationchat.domain.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;

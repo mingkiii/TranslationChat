@@ -1,6 +1,6 @@
 package com.example.translationchat.common.redis.config;
 
-import com.example.translationchat.client.domain.model.User;
+import com.example.translationchat.domain.user.entity.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

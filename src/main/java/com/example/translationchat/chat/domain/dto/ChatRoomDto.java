@@ -1,6 +1,6 @@
 package com.example.translationchat.chat.domain.dto;
 
-import com.example.translationchat.chat.domain.model.ChatRoom;
+import com.example.translationchat.domain.chat.entity.ChatRoom;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
