@@ -1,7 +1,6 @@
 package com.example.translationchat.domain.chat.service;
 
 import static com.example.translationchat.common.exception.ErrorCode.ALREADY_RANDOM_CHAT_ROOM;
-import static com.example.translationchat.common.exception.ErrorCode.LOCK_FAILED;
 import static com.example.translationchat.common.exception.ErrorCode.NOT_INVALID_ROOM;
 
 import com.example.translationchat.common.exception.CustomException;
@@ -24,7 +23,6 @@ public class RandomChatRoomService {
     private final RandomChatRoomRepository randomChatRoomRepository;
     private final RedisService redisService;
 
-    private final String LOCK_KEY = "QUEUE_LOCK";
     private final String QUEUE_KEY = "random_chat_queue";
 
     @Transactional
@@ -35,17 +33,8 @@ public class RandomChatRoomService {
             throw new CustomException(ALREADY_RANDOM_CHAT_ROOM);
         }
 
-        try {
-            boolean locked = redisService.getLock(LOCK_KEY, 5);
-            if (locked) {
-                // Redis 를 이용하여 큐에 사용자 추가
-                redisService.push(QUEUE_KEY, user);
-            } else {
-                throw new CustomException(LOCK_FAILED);
-            }
-        } finally {
-            redisService.unLock(LOCK_KEY);
-        }
+        // Redis 를 이용하여 큐에 사용자 추가
+        redisService.push(QUEUE_KEY, user);
 
         tryMatchAndCreateChatRoom();
     }
@@ -56,23 +45,13 @@ public class RandomChatRoomService {
 
         // 매칭할 사용자들 선택
         while (matchedUsers.size() < 2) {
-            try {
-                boolean locked = redisService.getLock(LOCK_KEY, 5);
-                if (locked) {
-                    // Redis 를 이용하여 큐에서 사용자 제거
-                    User user = redisService.pop(QUEUE_KEY);
-                    if (user == null) {
-                        break; // 큐가 비었다면 종료. 다른 유저에 의해 매칭된 경우
-                    }
-                    // 사용자가 온라인 상태, 랜덤 이용 가능한 경우에만 매칭 대상에 추가
-                    if (user.getStatus() == ActiveStatus.ONLINE && user.isRandomApproval()) {
-                        matchedUsers.add(user);
-                    }
-                } else {
-                    throw new CustomException(LOCK_FAILED);
-                }
-            } finally {
-                redisService.unLock(LOCK_KEY);
+            User user = redisService.pop(QUEUE_KEY);
+            if (user == null) {
+                break; // 큐가 비었다면 종료. 다른 유저에 의해 매칭된 경우
+            }
+            // 사용자가 온라인 상태, 랜덤 이용 가능한 경우에만 매칭 대상에 추가
+            if (user.getStatus() == ActiveStatus.ONLINE && user.isRandomApproval()) {
+                matchedUsers.add(user);
             }
         }
 
@@ -80,16 +59,7 @@ public class RandomChatRoomService {
             createChatRoom(matchedUsers.get(0), matchedUsers.get(1));
         } else if (matchedUsers.size() == 1) {
             // 매칭 실패한 경우 큐에 다시 넣음
-            try {
-                boolean locked = redisService.getLock(LOCK_KEY, 5);
-                if (locked) {
-                    redisService.push(QUEUE_KEY, matchedUsers.get(0));
-                } else {
-                    throw new CustomException(LOCK_FAILED);
-                }
-            } finally {
-                redisService.unLock(LOCK_KEY);
-            }
+            redisService.push(QUEUE_KEY, matchedUsers.get(0));
         }
     }
 

@@ -109,7 +109,7 @@ public class FriendController {
             throw new CustomException(BAD_REQUEST);
         }
 
-        friendService.accept(user, friendRequest);
+        friendService.acceptAndAlarm(user, friendRequest);
     }
 
     // 친구 요청 거절
@@ -121,7 +121,7 @@ public class FriendController {
             throw new CustomException(BAD_REQUEST);
         }
 
-        friendService.reject(user, friendRequest);
+        friendService.rejectAndAlarm(user, friendRequest);
     }
 
     // 친구 삭제, 친구 요청 취소

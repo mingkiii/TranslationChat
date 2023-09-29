@@ -2,15 +2,14 @@ package com.example.translationchat.domain.notification.service;
 
 import static com.example.translationchat.common.exception.ErrorCode.NOT_FOUND_NOTIFICATION;
 
-import com.example.translationchat.domain.notification.form.NotificationForm;
+import com.example.translationchat.common.exception.CustomException;
 import com.example.translationchat.domain.notification.entity.Notification;
+import com.example.translationchat.domain.notification.form.NotificationForm;
 import com.example.translationchat.domain.notification.repository.NotificationRepository;
 import com.example.translationchat.domain.notification.repository.emitter.EmitterRepository;
-import com.example.translationchat.common.exception.CustomException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -96,11 +95,12 @@ public class NotificationService {
         return notificationRepository.findAllByUserIdOrderByCreatedAtDesc(userId);
     }
 
-    public void delete(Long userId, Long notificationId) {
-        Notification alarm = notificationRepository.findById(notificationId)
+    public Notification findById(Long notificationId) {
+        return notificationRepository.findById(notificationId)
             .orElseThrow(() -> new CustomException(NOT_FOUND_NOTIFICATION));
-        if (Objects.equals(userId, alarm.getUser().getId())) {
-            notificationRepository.delete(alarm);
-        }
+    }
+
+    public void delete(Notification notification) {
+        notificationRepository.delete(notification);
     }
 }

@@ -2,7 +2,6 @@ package com.example.translationchat.domain.user.service;
 
 import static com.example.translationchat.common.exception.ErrorCode.ALREADY_REGISTERED_EMAIL;
 import static com.example.translationchat.common.exception.ErrorCode.ALREADY_REGISTERED_NAME;
-import static com.example.translationchat.common.exception.ErrorCode.LOCK_FAILED;
 import static com.example.translationchat.common.exception.ErrorCode.LOGIN_FAIL;
 import static com.example.translationchat.common.exception.ErrorCode.NEW_PASSWORD_MISMATCH_RE_PASSWORD;
 import static com.example.translationchat.common.exception.ErrorCode.NOT_FOUND_USER;
@@ -10,7 +9,6 @@ import static com.example.translationchat.common.exception.ErrorCode.USER_PASSWO
 import static com.example.translationchat.common.exception.ErrorCode.USER_PASSWORD_MISMATCH;
 
 import com.example.translationchat.common.exception.CustomException;
-import com.example.translationchat.common.redis.RedisService;
 import com.example.translationchat.common.security.JwtAuthenticationProvider;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
 import com.example.translationchat.domain.type.ActiveStatus;
@@ -38,7 +36,6 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final RedisService redisLockUtil;
     private final JwtAuthenticationProvider provider;
     private final AuthenticationManager authenticationManager;
 
@@ -55,39 +52,24 @@ public class UserService {
     @Transactional
     public String signUp(SignUpForm form) {
         String email = form.getEmail();
-        String name = form.getName();
-
-        try {
-            // 락 확보 시도 (타임아웃은 예시로 5초로 설정)
-            boolean emailLocked = redisLockUtil.getLock(email, 5);
-            boolean nameLocked = redisLockUtil.getLock(name, 5);
-            if (emailLocked && nameLocked) {
-                // 락 확보 성공하면 중복 체크 수행
-                if (userRepository.existsByEmail(email)) {
-                    throw new CustomException(ALREADY_REGISTERED_EMAIL);
-                }
-                if (userRepository.existsByName(name)) {
-                    throw new CustomException(ALREADY_REGISTERED_NAME);
-                }
-                userRepository.save(
-                    User.builder()
-                        .email(email)
-                        .password(passwordEncoder.encode(form.getPassword()))
-                        .name(name)
-                        .nationality(form.getNationality())
-                        .language(form.getLanguage())
-                        .randomApproval(true)
-                        .build()
-                );
-                return "회원가입이 완료되었습니다.";
-            } else {
-                // 락 확보 실패 시에는 다른 클라이언트가 이미 해당 키로 락을 확보한 것으로 간주
-                throw new CustomException(LOCK_FAILED); // 중복된 이메일 또는 이름으로 간주
-            }
-        } finally {
-            redisLockUtil.unLock(email);
-            redisLockUtil.unLock(name);
+        if (userRepository.existsByEmail(email)) {
+            throw new CustomException(ALREADY_REGISTERED_EMAIL);
         }
+        String name = form.getName();
+        if (userRepository.existsByName(name)) {
+            throw new CustomException(ALREADY_REGISTERED_NAME);
+        }
+
+        userRepository.save(User.builder()
+                .email(email)
+                .password(passwordEncoder.encode(form.getPassword()))
+                .name(name)
+                .nationality(form.getNationality())
+                .language(form.getLanguage())
+                .randomApproval(true)
+                .build()
+        );
+        return "회원가입이 완료되었습니다.";
     }
 
     // 로그인 (반환값 : 토큰)
@@ -127,13 +109,11 @@ public class UserService {
     }
 
     // 회원 탈퇴
-    @Transactional
     public void delete(User user) {
         userRepository.delete(user);
     }
 
     // 회원(본인) 정보 수정
-    @Transactional(rollbackFor = Exception.class)
     public User updateInfo(User user, UpdateUserForm form) {
         // 국적 변경
         Nationality newNationality = form.getNationality();
@@ -143,7 +123,6 @@ public class UserService {
 
         // 언어 변경
         Language newLanguage = form.getLanguage();
-        System.out.println(newLanguage);
         if (newLanguage != null && newLanguage != user.getLanguage()) {
             user.setLanguage(newLanguage);
         }
@@ -179,6 +158,7 @@ public class UserService {
         }
     }
 
+    @Transactional
     public void updateWarningCount(User user) {
         user.setWarningCount(user.getWarningCount() + 1);
         if (user.getWarningCount() % 3 == 0) {

@@ -2,7 +2,7 @@ package com.example.translationchat.common.papago;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.example.translationchat.client.domain.type.Language;
+import com.example.translationchat.domain.type.Language;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

@@ -1,12 +1,16 @@
 package com.example.translationchat.domain.notification.controller;
 
+import static com.example.translationchat.common.exception.ErrorCode.BAD_REQUEST;
+
+import com.example.translationchat.common.exception.CustomException;
+import com.example.translationchat.common.security.principal.PrincipalDetails;
 import com.example.translationchat.domain.notification.dto.NotificationDto;
 import com.example.translationchat.domain.notification.entity.Notification;
-import com.example.translationchat.domain.user.entity.User;
 import com.example.translationchat.domain.notification.service.NotificationService;
+import com.example.translationchat.domain.user.entity.User;
 import com.example.translationchat.domain.user.service.UserService;
-import com.example.translationchat.common.security.principal.PrincipalDetails;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -54,6 +58,10 @@ public class NotificationController {
     public void delete(@AuthenticationPrincipal PrincipalDetails principal,
         @PathVariable("notificationId") Long notificationId) {
         User user = userService.getUserByEmail(principal.getUsername());
-        notificationService.delete(user.getId(), notificationId);
+        Notification notification = notificationService.findById(notificationId);
+        if (!Objects.equals(notification.getUser().getId(), user.getId())) {
+            throw new CustomException(BAD_REQUEST);
+        }
+        notificationService.delete(notification);
     }
 }

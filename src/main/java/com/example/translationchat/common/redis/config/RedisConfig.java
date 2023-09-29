@@ -23,13 +23,6 @@ public class RedisConfig {
         config.setPort(port);
         return new LettuceConnectionFactory(config);
     }
-    @Bean
-    public RedisTemplate<String, String> redisTemplate(
-        RedisConnectionFactory redisConnectionFactory) {
-        RedisTemplate<String, String> template = new RedisTemplate<>();
-        template.setConnectionFactory(redisConnectionFactory);
-        return template;
-    }
 
     @Bean
     public RedisTemplate<String, User> userRedisTemplate(

@@ -47,7 +47,7 @@ public class FriendService {
 
     // 친구 요청 수락
     @Transactional
-    public void accept(User user, Friend friendRequest) {
+    public void acceptAndAlarm(User user, Friend friendRequest) {
         User requester = friendRequest.getUser();
         friendRequest.setStatus(ApplyStatus.ACCEPT);
         friendRepository.save(friendRequest);
@@ -64,14 +64,14 @@ public class FriendService {
 
     // 친구 요청 거절
     @Transactional
-    public void reject(User user, Friend friendRequest) {
+    public void rejectAndAlarm(User user, Friend friendRequest) {
         User requester = friendRequest.getUser();
         friendRepository.delete(friendRequest);
 
         alarmEventPub(requester, user, ContentType.REJECT_FRIEND);
     }
 
-    // 즐겨찾기 삭제
+    // 친구 삭제
     @Transactional
     public void delete(Friend friend) {
         friendRepository.delete(friend);
@@ -84,6 +84,7 @@ public class FriendService {
             .collect(Collectors.toList());
     }
 
+    // 유저가 친구 신청한 목록
     public List<Friend> requests(Long userId) {
         return friendRepository.findAllByUserId(userId).stream()
             .filter(friend -> friend.getStatus() == ApplyStatus.PENDING)
@@ -99,6 +100,4 @@ public class FriendService {
     private void alarmEventPub(User receiver, User sendUser, ContentType content) {
         eventPublisher.publishEvent(NotificationForm.of(receiver, sendUser, content));
     }
-
-
 }
