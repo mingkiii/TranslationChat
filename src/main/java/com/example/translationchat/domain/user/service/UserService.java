@@ -84,10 +84,6 @@ public class UserService {
                 // 락 확보 실패 시에는 다른 클라이언트가 이미 해당 키로 락을 확보한 것으로 간주
                 throw new CustomException(LOCK_FAILED); // 중복된 이메일 또는 이름으로 간주
             }
-        } catch (Exception e) {
-            redisLockUtil.unLock(email);
-            redisLockUtil.unLock(name);
-            throw e;
         } finally {
             redisLockUtil.unLock(email);
             redisLockUtil.unLock(name);
@@ -188,6 +184,11 @@ public class UserService {
         if (user.getWarningCount() % 3 == 0) {
             user.setRandomApproval(false); // 이용 정지 상태로 변경
         }
+        userRepository.save(user);
+    }
+
+    public void updateRandomApproval(User user) {
+        user.setRandomApproval(true);
         userRepository.save(user);
     }
 }

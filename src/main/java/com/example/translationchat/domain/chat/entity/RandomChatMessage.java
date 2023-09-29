@@ -1,7 +1,7 @@
 package com.example.translationchat.domain.chat.entity;
 
 import com.example.translationchat.common.model.BaseEntity;
-import com.example.translationchat.domain.chat.dto.ChatMessageDto;
+import com.example.translationchat.domain.chat.dto.RandomChatMessageDto;
 import com.example.translationchat.domain.type.Language;
 import com.example.translationchat.domain.user.entity.User;
 import javax.persistence.Entity;
@@ -25,7 +25,7 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ChatMessage extends BaseEntity {
+public class RandomChatMessage extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,7 +33,7 @@ public class ChatMessage extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_room_id")
-    private ChatRoom chatRoom;
+    private RandomChatRoom chatRoom;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -49,8 +49,8 @@ public class ChatMessage extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private Language transLanguage;
 
-    public static ChatMessage of(ChatRoom room, User sendUser, ChatMessageDto messageDto) {
-        return ChatMessage.builder()
+    public static RandomChatMessage of(RandomChatRoom room, User sendUser, RandomChatMessageDto messageDto) {
+        return RandomChatMessage.builder()
             .user(sendUser)
             .chatRoom(room)
             .message(messageDto.getText())

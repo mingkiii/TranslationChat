@@ -1,232 +1,73 @@
 package com.example.translationchat.domain.chat.service;
 
-import static com.example.translationchat.common.exception.ErrorCode.ALREADY_EXISTS_ROOM;
-import static com.example.translationchat.common.exception.ErrorCode.ALREADY_REGISTERED_BLOCKED;
-import static com.example.translationchat.common.exception.ErrorCode.ALREADY_REQUEST;
-import static com.example.translationchat.common.exception.ErrorCode.ALREADY_REQUEST_RECEIVER;
-import static com.example.translationchat.common.exception.ErrorCode.NOT_INVALID_ROOM;
-import static com.example.translationchat.common.exception.ErrorCode.NOT_YOUR_NOTIFICATION;
-import static com.example.translationchat.common.exception.ErrorCode.OFFLINE_USER;
+import static com.example.translationchat.common.exception.ErrorCode.NOT_EXIST_CLIENT;
 
 import com.example.translationchat.common.exception.CustomException;
-import com.example.translationchat.common.handler.ChatHandler;
-import com.example.translationchat.common.kafka.Producers;
 import com.example.translationchat.domain.chat.entity.ChatRoom;
 import com.example.translationchat.domain.chat.entity.ChatRoomUser;
-import com.example.translationchat.domain.chat.repository.ChatMessageRepository;
-import com.example.translationchat.domain.chat.repository.ChatRoomRepository;
 import com.example.translationchat.domain.chat.repository.ChatRoomUserRepository;
-import com.example.translationchat.domain.favorite.entity.Favorite;
-import com.example.translationchat.domain.favorite.repository.FavoriteRepository;
-import com.example.translationchat.domain.notification.dto.NotificationDto;
-import com.example.translationchat.domain.notification.form.NotificationForm;
-import com.example.translationchat.domain.notification.service.NotificationService;
-import com.example.translationchat.domain.type.ActiveStatus;
-import com.example.translationchat.domain.type.ContentType;
 import com.example.translationchat.domain.user.entity.User;
-import com.example.translationchat.domain.user.repository.UserRepository;
 import java.util.List;
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.socket.WebSocketSession;
 
 @Service
 @RequiredArgsConstructor
 public class ChatRoomUserService {
 
-    private final ChatHandler chatHandler;
-    private final Producers producers;
-
-    private final UserRepository userRepository;
-    private final FavoriteRepository favoriteRepository;
-    private final NotificationService notificationService;
     private final ChatRoomUserRepository chatRoomUserRepository;
-    private final ChatRoomRepository chatRoomRepository;
-    private final ChatMessageRepository chatMessageRepository;
-
-    // 대화 요청
-    @Transactional
-    public void request(Authentication authentication, WebSocketSession session, Long receiverUserId) {
-        User user = getUser(authentication);
-        User receiver = getUserById(receiverUserId);
-
-        // 요청 가능한 상황인지 확인
-        validateRequest(user, receiver);
-
-        // 대화방 생성
-        String title = String.format("%s 님과 %s 님의 대화", user.getName(), receiver.getName());
-        ChatRoom room = chatRoomRepository.save(ChatRoom.builder().title(title).build());
-
-        // 웹소켓에 대화방아이디 등록
-        chatHandler.putRoomIdSession(session, room.getId());
-
-        // Kafka Topic 키(roomId)에 구독자 추가
-        producers.produceMessage(room.getId(), "Subscribed");
-
-        // 요청받는 유저에게 대화 요청 알림 생성
-        String message = String.format("%s 님이 %s 님에게 %s",
-            user.getName(), receiver.getName(), ContentType.REQUEST_CHAT.getDisplayName());
-
-        notificationService.create(NotificationForm.builder()
-            .user(receiver)
-            .args(user.getId())
-            .roomId(room.getId())
-            .contentType(ContentType.REQUEST_CHAT)
-            .build(), message);
-    }
-
-    private void isOnline(User user) {
-        if (ActiveStatus.OFFLINE == user.getStatus()) {
-            throw new CustomException(OFFLINE_USER);
-        }
-    }
-
-    private void validateRequest(User user, User receiver) {
-        // 상대가 접속중인지
-        isOnline(receiver);
-
-        // 유저가 차단한 유저인지 확인 -> 차단한 경우 요청되지 않음
-        if (favoriteRepository.findByUserAndFavoriteUser(user, receiver)
-            .map(Favorite::isBlocked).orElse(false)) {
-            throw new CustomException(ALREADY_REGISTERED_BLOCKED);
-        }
-
-        // 상대가 유저를 차단한 상태인지 확인
-        // 차단 당한 상태일 경우 - 오프라인 상태 거짓 예외발생으로 요청 되지 않도록 함.
-        if (favoriteRepository.findByUserAndFavoriteUser(receiver, user)
-            .map(Favorite::isBlocked).orElse(false)) {
-            throw new CustomException(OFFLINE_USER);
-        }
-
-        // 요청받는 유저가 이미 요청자에게 대화 요청한 경우
-        if (notificationService.existsNotification(receiver, user.getId(), ContentType.REQUEST_CHAT)) {
-            throw new CustomException(ALREADY_REQUEST_RECEIVER);
-        }
-
-        // 요청자가 이미 요청한 경우 예외 발생
-        if (notificationService.existsNotification(user, receiver.getId(), ContentType.REQUEST_CHAT)) {
-            throw new CustomException(ALREADY_REQUEST);
-        }
-
-        // 이미 대화방이 있는지 확인
-        if (chatRoomUserRepository.existsByUser(user, receiver)) {
-            throw new CustomException(ALREADY_EXISTS_ROOM);
-        }
-    }
-
-    // 대화 요청 수락
-    @Transactional
-    public void accept(Authentication authentication, WebSocketSession session, Long notificationId) {
-        NotificationDto notificationDto = notificationService.getNotificationDto(notificationId);
-        User user = getUser(authentication);
-        // 유저의 알림인지 확인
-        validateNotificationUser(notificationDto.getUser(), user);
-
-        User requester = getUserById(notificationDto.getArgs());
-        // 요청자 접속 중인지 확인
-        isOnline(requester);
-
-        ChatRoom room = checkRoom(notificationDto.getRoomId(), user, requester);
-
-        // 대화방 정보(유저,방) 저장
-        createChatRoomUser(user, room);
-        createChatRoomUser(requester, room);
-
-        // 웹소켓에 등록된 대화방아이디 세션리스트에 세션 추가
-        chatHandler.putRoomIdSession(session, room.getId());
-
-        // Kafka Topic 키(roomId)에 구독자 추가
-        producers.produceMessage(room.getId(), "Subscribed");
-
-        // 대화 요청 알림 삭제
-        notificationService.delete(notificationId);
-    }
-
-    private void validateNotificationUser(User user1, User user2) {
-        if (!Objects.equals(user1.getId(), user2.getId())) {
-            throw new CustomException(NOT_YOUR_NOTIFICATION);
-        }
-    }
-
-    private void createChatRoomUser(User user, ChatRoom room) {
-        chatRoomUserRepository.save(ChatRoomUser.builder()
-            .user(user)
-            .chatRoom(room)
-            .build());
-    }
-
-    // 대화 요청 거절
-    @Transactional
-    public void refuse(Authentication authentication, Long notificationId) {
-        NotificationDto notificationDto = notificationService.getNotificationDto(notificationId);
-        User user = getUser(authentication);
-        // 유저의 알림인지 확인
-        validateNotificationUser(notificationDto.getUser(), user);
-
-        User requester = getUserById(notificationDto.getArgs());
-
-        // 요청 시 만든 대화방 삭제
-        ChatRoom room = checkRoom(notificationDto.getRoomId(), user, requester);
-        chatRoomRepository.delete(room);
-
-        // 웹소켓에 등록된 대화방아이디 삭제
-        chatHandler.deleteRoomId(room.getId());
-
-        // 요청시 생성된 kafka topic 키(roomId) 구독 취소 메세지 남김.
-        producers.produceMessage(room.getId(), "Unsubscribed");
-
-        // 요청자에게 요청 거절 알림 생성
-        String message = String.format("%s 님이 %s 님의 %s",
-            user.getName(), requester.getName(),
-            ContentType.REFUSE_REQUEST_CHAT.getDisplayName());
-
-        notificationService.create(NotificationForm.builder()
-            .user(requester)
-            .args(user.getId())
-            .contentType(ContentType.REFUSE_REQUEST_CHAT)
-            .build(), message);
-
-        // 대화 요청 알림 삭제
-        notificationService.delete(notificationId);
-    }
-
-    private ChatRoom checkRoom(Long roomId, User user, User requester) {
-        ChatRoom room = chatRoomRepository.findById(roomId)
-            .orElseThrow(() -> new CustomException(NOT_INVALID_ROOM));
-        String title = room.getTitle();
-        String isValid = String.format("%s 님과 %s 님의 대화", requester.getName(), user.getName());
-        if (!title.equals(isValid)) {
-            throw new CustomException(NOT_INVALID_ROOM);
-        }
-        return room;
-    }
 
     // 대화방 목록 조회
     public List<ChatRoomUser> findAllByUserId(Long userId) {
         return chatRoomUserRepository.findAllByUserId(userId);
     }
 
-    // 대화방 나가기
-    public void outRoom(Authentication authentication, Long roomId) {
-        User user = getUser(authentication);
+    public void enterChatRoom(ChatRoom room, User user, User targetUser) {
+        // 대화방에 속한 모든 ChatRoomUser 조회
+        List<ChatRoomUser> chatRoomUsers = findByRoomId(room.getId());
 
-        ChatRoom room = chatRoomRepository.findById(roomId)
-            .orElseThrow(() -> new CustomException(NOT_INVALID_ROOM));
+        // 대화방에 유저와 타겟 유저가 이미 존재하는지 확인
+        boolean userExists = false;
+        boolean targetUserExists = false;
 
-        ChatRoomUser chatRoomUser = chatRoomUserRepository.findByUserAndChatRoom(user, room)
-            .orElseThrow(() -> new CustomException(NOT_INVALID_ROOM));
-
-        chatRoomUserRepository.delete(chatRoomUser);
-
-        // 대화방에 모두 나가기 한 경우 방, 메세지, kafka 키(roomId) 구독 취소 메세지 남김.
-        if (room.getChatRoomUsers().size() == 0) {
-            // 대화 메시지 삭제 로직 추가
-            chatMessageRepository.deleteByChatRoom(room);
-            chatRoomRepository.delete(room);
-            producers.produceMessage(room.getId(), "Unsubscribed");
+        for (ChatRoomUser chatRoomUser : chatRoomUsers) {
+            if (chatRoomUser.getUser().equals(user)) {
+                userExists = true;
+            }
+            if (chatRoomUser.getUser().equals(targetUser)) {
+                targetUserExists = true;
+            }
         }
+
+        // 유저가 대화방에 존재하지 않는 경우, ChatRoomUser 엔티티를 생성하여 추가
+        if (!userExists) {
+            ChatRoomUser userChatRoomUser = ChatRoomUser.builder()
+                .user(user)
+                .chatRoom(room)
+                .build();
+            chatRoomUserRepository.save(userChatRoomUser);
+        }
+
+        // 타겟 유저가 대화방에 존재하지 않는 경우, ChatRoomUser 엔티티를 생성하여 추가
+        if (!targetUserExists) {
+            ChatRoomUser targetUserChatRoomUser = ChatRoomUser.builder()
+                .user(targetUser)
+                .chatRoom(room)
+                .build();
+            chatRoomUserRepository.save(targetUserChatRoomUser);
+        }
+    }
+
+    public void exit(ChatRoom room, User user) {
+        chatRoomUserRepository.delete(findByRoomAndUser(room, user));
+    }
+
+    public List<ChatRoomUser> findByRoomId(Long roomId) {
+        return chatRoomUserRepository.findAllByChatRoomId(roomId);
+    }
+
+    public ChatRoomUser findByRoomAndUser(ChatRoom room, User user) {
+        return chatRoomUserRepository.findByUserIdAndChatRoomId(user.getId(), room.getId())
+            .orElseThrow(() -> new CustomException(NOT_EXIST_CLIENT));
     }
 }

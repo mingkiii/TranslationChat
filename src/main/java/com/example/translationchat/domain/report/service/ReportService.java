@@ -33,14 +33,8 @@ public class ReportService {
         Instant lastReportDate = lastReport.getReportTime();
 
         Duration duration = Duration.between(lastReportDate, currentDate);
-        // 7일 지났으면 유저 랜덤 채팅 서비스 승인으로 변경
-        if (duration.toDays() >= 7) {
-            user.setRandomApproval(true);
-            userRepository.save(user);
 
-            return true;
-        }
-        return false;
+        return duration.toDays() >= 7;
     }
 
     public void validateReport(User target, Long userId) {

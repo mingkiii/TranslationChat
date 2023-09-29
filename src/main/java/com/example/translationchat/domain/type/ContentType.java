@@ -1,17 +1,7 @@
 package com.example.translationchat.domain.type;
 
 public enum ContentType {
-    REQUEST_CHAT("대화를 요청합니다."),
-    REFUSE_REQUEST_CHAT("대화 요청을 거절합니다."),
-    ;
-
-    private final String displayName;
-
-    ContentType(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
+    REQUEST_FRIEND,  // 님이 친구 요청하였습니다.
+    ACCEPT_FRIEND,   // 님이 친구 요청을 수락하였습니다.
+    REJECT_FRIEND,   // 님이 친구 요청을 거절하였습니다.
 }

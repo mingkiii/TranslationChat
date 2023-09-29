@@ -1,13 +1,15 @@
-package com.example.translationchat.domain.notification.entity;
+package com.example.translationchat.domain.friend.entity;
 
 import com.example.translationchat.common.model.BaseEntity;
-import com.example.translationchat.domain.notification.form.NotificationForm;
-import com.example.translationchat.domain.type.ContentType;
+import com.example.translationchat.domain.type.ApplyStatus;
 import com.example.translationchat.domain.user.entity.User;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import java.time.LocalDateTime;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -18,6 +20,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.LastModifiedDate;
 
 @Entity
 @Getter
@@ -25,31 +28,24 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Notification extends BaseEntity{
+public class Friend extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column
-    private Long sendUserId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "friend_user_id")
+    private User friendUser;
 
-    @Column
-    private String sendUserName;
-
-    @Column
     @Enumerated(EnumType.STRING)
-    private ContentType content;
+    private ApplyStatus status;
 
-    public static Notification from(NotificationForm form) {
-        return Notification.builder()
-            .user(form.getUser())
-            .sendUserId(form.getSendUserId())
-            .sendUserName(form.getSendUserName())
-            .content(form.getContentType())
-            .build();
-    }
+    @Column(name = "modified_at", updatable = false)
+    @LastModifiedDate
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
+    private LocalDateTime modifiedAt;
 }

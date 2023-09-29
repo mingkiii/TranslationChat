@@ -1,6 +1,6 @@
 package com.example.translationchat.domain.user.repository;
 
-import com.example.translationchat.client.domain.model.QUser;
+import com.example.translationchat.domain.user.entity.QUser;
 import com.example.translationchat.domain.user.entity.User;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;

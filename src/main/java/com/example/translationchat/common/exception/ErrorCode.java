@@ -20,7 +20,8 @@ public enum ErrorCode {
     NEW_PASSWORD_MISMATCH_RE_PASSWORD(HttpStatus.BAD_REQUEST, "새 비밀번호 확인이 일치하지 않습니다."),
 
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
-    ALREADY_REGISTERED_FAVORITE(HttpStatus.BAD_REQUEST, "이미 즐겨찾기에 등록 되어있습니다."),
+    ALREADY_REGISTERED_FRIEND(HttpStatus.BAD_REQUEST, "이미 친구로 등록 되어있습니다."),
+    ALREADY_REQUESTED_FRIEND(HttpStatus.BAD_REQUEST, "이미 친구로 등록 되어있습니다."),
     ALREADY_REGISTERED_BLOCKED(HttpStatus.BAD_REQUEST, "차단된 유저입니다."),
     NOT_FOUND_BLOCK(HttpStatus.BAD_REQUEST, "차단 정보를 찾을 수 없습니다."),
     NOT_FOUND_FAVORITE(HttpStatus.BAD_REQUEST, "즐겨찾기 정보를 찾을 수 없습니다."),

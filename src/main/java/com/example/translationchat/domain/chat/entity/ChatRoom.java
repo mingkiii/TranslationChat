@@ -1,6 +1,7 @@
 package com.example.translationchat.domain.chat.entity;
 
 import com.example.translationchat.common.model.BaseEntity;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -20,5 +21,6 @@ public class ChatRoom extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, unique = true)
     private String  title;
 }

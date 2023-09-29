@@ -1,8 +1,9 @@
 package com.example.translationchat.domain.user.controller;
 
+import com.example.translationchat.common.security.principal.PrincipalDetails;
+import com.example.translationchat.domain.block.service.BlockService;
 import com.example.translationchat.domain.user.dto.MyInfoDto;
 import com.example.translationchat.domain.user.dto.UserInfoDto;
-import com.example.translationchat.common.security.principal.PrincipalDetails;
 import com.example.translationchat.domain.user.entity.User;
 import com.example.translationchat.domain.user.form.LoginForm;
 import com.example.translationchat.domain.user.form.SignUpForm;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     private final UserService userService;
+    private final BlockService blockService;
 
     // 회원 가입
     @PostMapping("/auth/signup")
@@ -86,8 +88,12 @@ public class UserController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<UserInfoDto>> search(@RequestParam String name) {
+    public ResponseEntity<List<UserInfoDto>> search(
+        @AuthenticationPrincipal PrincipalDetails principal, @RequestParam String name) {
+        User user = userService.getUserByEmail(principal.getEmail());
         return ResponseEntity.ok(userService.searchByUserName(name).stream()
+                .filter(findUser -> !blockService.existsByUserIdAndBlockUserId(user.getId(), findUser.getId()))
+                .filter(findUser -> !blockService.existsByUserIdAndBlockUserId(findUser.getId(), user.getId()))
             .map(UserInfoDto::from)
             .collect(Collectors.toList())
         );

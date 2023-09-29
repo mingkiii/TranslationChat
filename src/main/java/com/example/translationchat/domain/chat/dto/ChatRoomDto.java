@@ -1,4 +1,4 @@
-package com.example.translationchat.chat.domain.dto;
+package com.example.translationchat.domain.chat.dto;
 
 import com.example.translationchat.domain.chat.entity.ChatRoom;
 import lombok.AllArgsConstructor;
