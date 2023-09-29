@@ -11,7 +11,9 @@ import static com.example.translationchat.common.exception.ErrorCode.USER_PASSWO
 import com.example.translationchat.common.exception.CustomException;
 import com.example.translationchat.common.security.JwtAuthenticationProvider;
 import com.example.translationchat.common.security.principal.PrincipalDetails;
+import com.example.translationchat.domain.notification.form.NotificationForm;
 import com.example.translationchat.domain.type.ActiveStatus;
+import com.example.translationchat.domain.type.ContentType;
 import com.example.translationchat.domain.type.Language;
 import com.example.translationchat.domain.type.Nationality;
 import com.example.translationchat.domain.user.entity.User;
@@ -22,6 +24,7 @@ import com.example.translationchat.domain.user.form.UpdateUserForm;
 import com.example.translationchat.domain.user.repository.UserRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -34,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserService {
 
+    private final ApplicationEventPublisher eventPublisher;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtAuthenticationProvider provider;
@@ -163,6 +167,8 @@ public class UserService {
         user.setWarningCount(user.getWarningCount() + 1);
         if (user.getWarningCount() % 3 == 0) {
             user.setRandomApproval(false); // 이용 정지 상태로 변경
+            eventPublisher.publishEvent(
+                NotificationForm.of(user, null, ContentType.INVALID_RANDOM_CHAT));
         }
         userRepository.save(user);
     }

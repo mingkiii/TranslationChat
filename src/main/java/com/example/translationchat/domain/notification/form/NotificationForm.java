@@ -25,8 +25,8 @@ public class NotificationForm {
     public static NotificationForm of(User user, User sendUser, ContentType contentType) {
         return NotificationForm.builder()
             .user(user)
-            .sendUserId(sendUser.getId())
-            .sendUserName(sendUser.getName())
+            .sendUserId(sendUser == null ? null : sendUser.getId())
+            .sendUserName(sendUser == null ? null : sendUser.getName())
             .contentType(contentType)
             .build();
     }
