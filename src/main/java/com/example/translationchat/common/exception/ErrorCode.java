@@ -15,12 +15,16 @@ public enum ErrorCode {
 
     NOT_FOUND_USER(HttpStatus.BAD_REQUEST, "회원을 찾을 수 없습니다."),
     LOGIN_REQUIRED(HttpStatus.BAD_REQUEST, "인증이 유효하지 않습니다. 다시 로그인 후 이용해주세요."),
+    USER_PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "기존 비밀번호가 일치하지 않습니다."),
+    USER_PASSWORD_EQUALS_NEW_PASSWORD(HttpStatus.BAD_REQUEST, "기존 비밀번호와 새 비밀번호가 일치합니다."),
+    NEW_PASSWORD_MISMATCH_RE_PASSWORD(HttpStatus.BAD_REQUEST, "새 비밀번호 확인이 일치하지 않습니다."),
 
-    CAN_NOT_FAVORITE_YOURSELF(HttpStatus.BAD_REQUEST, "사용자 자신을 즐겨찾기에 등록할 수 없습니다."),
-    ALREADY_REGISTERED_FAVORITE(HttpStatus.BAD_REQUEST, "이미 즐겨찾기에 등록 되어있습니다."),
-    NOT_REGISTERED_FAVORITE(HttpStatus.BAD_REQUEST, "즐겨찾기에 등록된 유저가 아닙니다."),
-    USER_IS_BLOCKED(HttpStatus.BAD_REQUEST, "차단된 유저입니다."),
-    USER_IS_NOT_BLOCKED(HttpStatus.BAD_REQUEST, "차단된 유저가 아닙니다."),
+    BAD_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
+    ALREADY_REGISTERED_FRIEND(HttpStatus.BAD_REQUEST, "이미 친구로 등록 되어있습니다."),
+    ALREADY_REQUESTED_FRIEND(HttpStatus.BAD_REQUEST, "이미 친구로 등록 되어있습니다."),
+    ALREADY_REGISTERED_BLOCKED(HttpStatus.BAD_REQUEST, "차단된 유저입니다."),
+    NOT_FOUND_BLOCK(HttpStatus.BAD_REQUEST, "차단 정보를 찾을 수 없습니다."),
+    NOT_FOUND_FAVORITE(HttpStatus.BAD_REQUEST, "즐겨찾기 정보를 찾을 수 없습니다."),
 
     OFFLINE_USER(HttpStatus.BAD_REQUEST, "유저가 오프라인 상태입니다."),
     ALREADY_REQUEST_RECEIVER(HttpStatus.BAD_REQUEST, "상대방이 이미 유저에게 대화 요청을 하였습니다."),

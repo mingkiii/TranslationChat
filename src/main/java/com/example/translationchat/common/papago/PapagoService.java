@@ -1,6 +1,6 @@
 package com.example.translationchat.common.papago;
 
-import com.example.translationchat.client.domain.type.Language;
+import com.example.translationchat.domain.type.Language;
 import com.google.gson.Gson;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;

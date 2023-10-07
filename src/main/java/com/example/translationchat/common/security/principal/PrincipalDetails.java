@@ -1,6 +1,6 @@
 package com.example.translationchat.common.security.principal;
 
-import com.example.translationchat.client.domain.model.User;
+import com.example.translationchat.domain.user.entity.User;
 import java.util.Collection;
 import java.util.Collections;
 import lombok.Data;
@@ -12,7 +12,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 @RequiredArgsConstructor
 public class PrincipalDetails implements UserDetails {
 
-    private final User user;
+    private final String email;
+    private final String password;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -21,16 +22,12 @@ public class PrincipalDetails implements UserDetails {
 
     @Override
     public String getPassword() {
-        return user.getPassword();
+        return password;
     }
 
     @Override
     public String getUsername() {
-        return user.getEmail();
-    }
-
-    public String getName() {
-        return user.getName();
+        return email;
     }
 
     @Override
@@ -51,5 +48,9 @@ public class PrincipalDetails implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+    public static PrincipalDetails create(User user) {
+        return new PrincipalDetails(user.getEmail(), user.getPassword());
     }
 }
